@@ -28,12 +28,12 @@
 		id_padre=>c4,
 		[nombre=>inicio],
 		[movimiento=>[
-			[lugar=>o5,probabilidad=>1.00,tiempo=>0.0],
-			[lugar=>o6,probabilidad=>0.98,tiempo=>6.0],
-			[lugar=>o7,probabilidad=>0.98,tiempo=>8.0],
-			[lugar=>o8,probabilidad=>0.98,tiempo=>9.0],
-			[lugar=>o9,probabilidad=>0.98,tiempo=>10.0],
-			[lugar=>o10,probabilidad=>0.98,tiempo=>9.0]             
+			[lugar=>o5,probabilidad=>1.00,costo=>0.0,recompensa=>0.0],
+			[lugar=>o6,probabilidad=>0.98,costo=>6.0,recompensa=>0.0],
+			[lugar=>o7,probabilidad=>0.98,costo=>8.0,recompensa=>0.0],
+			[lugar=>o8,probabilidad=>0.98,costo=>9.0,recompensa=>0.0],
+			[lugar=>o9,probabilidad=>0.98,costo=>10.0,recompensa=>0.0],
+			[lugar=>o10,probabilidad=>0.98,costo=>9.0,recompensa=>0.0]             
 			]
 		]
 	],
@@ -42,12 +42,12 @@
 		id_padre=>c4,
 		[nombre=>estante1],
 		[movimiento=>[
-			[lugar=>o5,probabilidad=>0.98,tiempo=>6.0],
-			[lugar=>o6,probabilidad=>1.00,tiempo=>0.0],
-			[lugar=>o7,probabilidad=>0.97,tiempo=>12.0],
-			[lugar=>o8,probabilidad=>0.97,tiempo=>15.0],
-			[lugar=>o9,probabilidad=>0.96,tiempo=>16.0],
-			[lugar=>o10,probabilidad=>0.97,tiempo=>12.0]             
+			[lugar=>o5,probabilidad=>0.98,costo=>6.0,recompensa=>0.0],
+			[lugar=>o6,probabilidad=>1.00,costo=>0.0,recompensa=>0.0],
+			[lugar=>o7,probabilidad=>0.97,costo=>12.0,recompensa=>0.0],
+			[lugar=>o8,probabilidad=>0.97,costo=>15.0,recompensa=>0.0],
+			[lugar=>o9,probabilidad=>0.96,costo=>16.0,recompensa=>0.0],
+			[lugar=>o10,probabilidad=>0.97,costo=>12.0,recompensa=>0.0]             
 			]
 		]
 	],
@@ -56,12 +56,12 @@
 		id_padre=>c4,
 		[nombre=>estante2],
 		[movimiento=>[
-			[lugar=>o5,probabilidad=>0.98,tiempo=>8.0],
-			[lugar=>o6,probabilidad=>0.97,tiempo=>12.0],
-			[lugar=>o7,probabilidad=>1.00,tiempo=>0.0],
-			[lugar=>o8,probabilidad=>0.98,tiempo=>6.0],
-			[lugar=>o9,probabilidad=>0.98,tiempo=>8.0],
-			[lugar=>o10,probabilidad=>0.96,tiempo=>16.0]             
+			[lugar=>o5,probabilidad=>0.98,costo=>8.0,recompensa=>0.0],
+			[lugar=>o6,probabilidad=>0.97,costo=>12.0,recompensa=>0.0],
+			[lugar=>o7,probabilidad=>1.00,costo=>0.0,recompensa=>0.0],
+			[lugar=>o8,probabilidad=>0.98,costo=>6.0,recompensa=>0.0],
+			[lugar=>o9,probabilidad=>0.98,costo=>8.0,recompensa=>0.0],
+			[lugar=>o10,probabilidad=>0.96,costo=>16.0,recompensa=>0.0]             
 			]
 		]
 	],
@@ -70,12 +70,12 @@
 		id_padre=>c4,
 		[nombre=>mesa1],
 		[movimiento=>[
-			[lugar=>o5,probabilidad=>0.98,tiempo=>9.0],
-			[lugar=>o6,probabilidad=>0.97,tiempo=>15.0],
-			[lugar=>o7,probabilidad=>0.98,tiempo=>6.0],
-			[lugar=>o8,probabilidad=>1.00,tiempo=>0.0],
-			[lugar=>o9,probabilidad=>0.99,tiempo=>2.0],
-			[lugar=>o10,probabilidad=>0.97,tiempo=>13.0]             
+			[lugar=>o5,probabilidad=>0.98,costo=>9.0,recompensa=>0.0],
+			[lugar=>o6,probabilidad=>0.97,costo=>15.0,recompensa=>0.0],
+			[lugar=>o7,probabilidad=>0.98,costo=>6.0,recompensa=>0.0],
+			[lugar=>o8,probabilidad=>1.00,costo=>0.0,recompensa=>0.0],
+			[lugar=>o9,probabilidad=>0.99,costo=>2.0,recompensa=>0.0],
+			[lugar=>o10,probabilidad=>0.97,costo=>13.0,recompensa=>0.0]             
 			]
 		]
 	],
@@ -84,12 +84,12 @@
 		id_padre=>c4,
 		[nombre=>mesa2],
 		[movimiento=>[
-			[lugar=>o5,probabilidad=>0.98,tiempo=>10.0],
-			[lugar=>o6,probabilidad=>0.96,tiempo=>16.0],
-			[lugar=>o7,probabilidad=>0.98,tiempo=>8.0],
-			[lugar=>o8,probabilidad=>0.99,tiempo=>2.0],
-			[lugar=>o9,probabilidad=>1.00,tiempo=>0.0],
-			[lugar=>o10,probabilidad=>0.97,tiempo=>12.0]             
+			[lugar=>o5,probabilidad=>0.98,costo=>10.0,recompensa=>0.0],
+			[lugar=>o6,probabilidad=>0.96,costo=>16.0,recompensa=>0.0],
+			[lugar=>o7,probabilidad=>0.98,costo=>8.0,recompensa=>0.0],
+			[lugar=>o8,probabilidad=>0.99,costo=>2.0,recompensa=>0.0],
+			[lugar=>o9,probabilidad=>1.00,costo=>0.0,recompensa=>0.0],
+			[lugar=>o10,probabilidad=>0.97,costo=>12.0,recompensa=>0.0]             
 			]
 		]
 	],
@@ -98,12 +98,12 @@
 		id_padre=>c4,
 		[nombre=>mesa3],
 		[movimiento=>[
-			[lugar=>o5,probabilidad=>0.98,tiempo=>9.0],
-			[lugar=>o6,probabilidad=>0.97,tiempo=>12.0],
-			[lugar=>o7,probabilidad=>0.96,tiempo=>16.0],
-			[lugar=>o8,probabilidad=>0.97,tiempo=>13.0],
-			[lugar=>o9,probabilidad=>0.97,tiempo=>12.0],
-			[lugar=>o10,probabilidad=>1.00,tiempo=>0.0]             
+			[lugar=>o5,probabilidad=>0.98,costo=>9.0,recompensa=>0.0],
+			[lugar=>o6,probabilidad=>0.97,costo=>12.0,recompensa=>0.0],
+			[lugar=>o7,probabilidad=>0.96,costo=>16.0,recompensa=>0.0],
+			[lugar=>o8,probabilidad=>0.97,costo=>13.0,recompensa=>0.0],
+			[lugar=>o9,probabilidad=>0.97,costo=>12.0,recompensa=>0.0],
+			[lugar=>o10,probabilidad=>1.00,costo=>0.0,recompensa=>0.0]             
 			]
 		]
 	],

@@ -61,28 +61,27 @@ quieroLugar(X,[H|T],P):-
 		P=H ; quieroLugar(X,T,P).
 
 /*regresa la probabilidad P de moverse a un lugar, hacia lugar X, buscando en una lista de lugares [H|T]*/
-quieroProb(X,[H|T],P):-
-	member(lugar=>X,H), member(probabilidad=>Pr,H)->
-		P=Pr ; quieroProb(X,T,P).
+quieroProb(X,[H|T],P, Time, Reward):-
+	member(lugar=>X,H), member(probabilidad=>Pr,H), member(costo=>Tm,H), member(recompensa=>Rw,H) ->
+		P=Pr, Time=Tm,  Reward = Rw; quieroProb(X,T,P,Time, Reward).
 
 /*quieroProbLugar(Clase/Objeto completo de lugar en que estoy, id Lugar al que me voy a mover, Probabilidad)*/
-quieroProbLugar(X,Y,P):-
+quieroProbLugar(X,Y,P,Time, Reward):-
 	nth0(3,X,Mov),
 	member(movimiento=>Ls,Mov),
-	quieroProb(Y,Ls,P).
+	quieroProb(Y,Ls,P,Time, Reward).
 
 
 /*regresa la probabilidad P de realizar la accion X buscando en una lista de acciones q le pasas [H|T]*/
-quieroProbAccion(X,[H|T],P):-
-	member(nombre=>X,H), member(probabilidad=>Pr,H)->
-		P=Pr ; quieroProbAccion(X,T,P).
+quieroProbAccion(X,[H|T],P, Time, Reward):-
+	member(nombre=>X,H), member(probabilidad=>Pr,H), member(costo=>Tm,H), member(recompensa=>Rw,H)->
+		P=Pr, Time = Tm, Reward = Rw ; quieroProbAccion(X,T,P, Time, Reward).
 
-/*quieroProbLugar(Clase/Objeto completo, accion, ej.: buscar/ agarrar, Probabilidad)*/
-quieroProbAccionObjeto(Ob,Ac,P):-
+/*quieroProbAccionObjeto(Clase/Objeto completo, accion, ej.: buscar/ agarrar, Probabilidad, Tiempo q toma, Reward q da)*/
+quieroProbAccionObjeto(Ob,Ac,P, Time, Reward):-
 	nth0(2,Ob,Props),
-	nth0(1,Props,Acs),
-	member(acciones=>As, Acs),
-	quieroProbAccion(Ac,As,P).
+	member(acciones=>Acs,Props),
+	quieroProbAccion(Ac,Acs,P, Time, Reward).
 
 /*ubicacion actual del robot*/
 ubicacion_actual(Ub):-
@@ -101,23 +100,40 @@ ubicar_objeto(Nm,Ub):-
 	Ub=X.
 
 /* estado de brazos actuales del robot*/
-brazos_robot(X):-
+brazos_robot(R):-
 	rb(W), 
-	extensionDeUnaClase(robot,Y),
+	extensionDeUnaClaseInicio(robot,Y),
 	nth0(0,Y,B1),nth0(1,Y,B2),
 	quieroClase(B1,W,Brazo1),quieroClase(B2,W,Brazo2),
-	nth0(3,Brazo1,Rb1),nth0(3,Y,Rb2),
+	nth0(3,Brazo1,Rb1),nth0(3,Brazo2,Rb2),
+	nth0(2,Brazo1,Nm1),nth0(2,Brazo2,Nm2),
+	member(nombre=>X1,Nm1), member(nombre=>X2, Nm2),
 	length(Rb1,N1),length(Rb2,N2),
-	(N1 == 0 ; N2 ==0)-> X=true; X=false.
+	( 	(N1 == 0 ),R = X1; (N2 == 0),R = X2
+	); R=false
+	.
 
-/*modificaPropiedad(Propiedad, Clase/Objeto, Valor Nuevo, Regresa la BD con la prop modificada en BD)*/
-modificaPropiedad(P,X,P1,BD):-
+
+/* estado de brazos actuales del robot*/
+brazos_robot_actual(Obj,Brazo):-
 	rb(W), 
-	quieroClase(X,W,Cl),
-	nth0(3,Cl,Props),
-	member(P=>Xv,Props),
-	sus(P=>Xv,P=>P1,Props,S), sus(Props,S,Cl,SC), sus(Cl,SC,W,BD).
+	extensionDeUnaClaseInicio(robot,Y),
+	nth0(0,Y,B1),nth0(1,Y,B2),
+	quieroClase(B1,W,Brazo1),quieroClase(B2,W,Brazo2),
+	nth0(3,Brazo1,Rb1),nth0(3,Brazo2,Rb2),
+	nth0(2,Brazo1,Nm1),nth0(2,Brazo2,Nm2),
+	length(Rb1,N1),length(Rb2,N2),
+	(	dif(N1,0), member(agarro=>Obj,Rb1), member(nombre=>X1,Nm1), Brazo = X1 ; 
+		dif(N2,0), member(agarro=>Obj,Rb2), member(nombre=>X1,Nm2), Brazo = X1 ;
+		Brazo = false
+	);
+	Brazo = false .
 
+
+/*agarrar objeto O, colocarlo en brazo X y, recibo BD actual en W, regreso la base modificada en BD*/
+agarrar_objeto(O,X,W,BD):-
+	modificaRelacion(ubicacion, O, X,W, BD1),
+	anadeRelacion(X,[agarro=>O],BD1,BD).
 
 /*-------------------------------Funciones del robot-----------------------------------------*/
 
@@ -129,26 +145,138 @@ accion_realizada(P,T):-
 	random(R),
 	(R >= P)-> T=false; T=true.
 
-/* Para mover al robot al lugar L */
-mover(L, BD):-
+/* Para mover al robot al lugar L, BD=New database, Time=Tiempo q lleva */
+mover(L, BD, OldTime,Time,OldReward, Reward):-
 	rb(W), 
 	ubicacion_actual(Ub),
 	quieroLugar(Ub,W,Uba),
 	quieroClase(L,W,Lu),
 	nth0(0,Lu,Nm),
 	segundoTermino(Nm,X), /*saco el id del lugar al q me voy a mover*/
-	quieroProbLugar(Uba,X,P),
+	quieroProbLugar(Uba,X,P, Tm, Rw),
 	accion_realizada(P,T),
-	(T == true)-> modificaPropiedad(ubicacion, robot, X, BD) ; write('no me pude mover :('), fail.
+	Time is OldTime+Tm, 
+	(T == true)-> 
+		Reward is OldReward+Rw, modificaPropiedad(ubicacion, robot, X, BD) ; 
+		write('no me pude mover :('), BD = false,  Reward is OldReward.
 
 
-/* Para mover al robot al lugar L */
-buscar(O,P):-
+/* Para buscar el objeto O, P = true or false/ lo hizo o no?, Time=Tiempo q lleva, Oldtime pa pasarle el viejo */
+buscar(O,P, OldTime,Time, OldReward, Reward):-
 	rb(W), 
+	quieroClase(O,W,Obj),
 	ubicacion_actual(Ub),
 	ubicar_objeto(O,Ub),
-	quieroClase(O,W,Obj),
-	quieroProbAccionObjeto(Obj,buscar,P),
-	accion_realizada(P,T),
-	(T == true)-> P = true ; P=false.
+	quieroProbAccionObjeto(Obj,buscar, Pro,Tm, Rw),
+	Time is OldTime+Tm,
+	accion_realizada(Pro,T),
+	(T == true)-> 
+		( P=true, Reward is OldReward+Rw ;
+		P=false,  Reward is OldReward )
+	;
+	write('no pude buscar, en este lugar no hay nada'), P = false, Reward is OldReward, Time is 0.
 
+/*colocar el objeto O en la mano libre del robot, si es q la tiene, BD modificada si realizo la accion. */
+agarrar(O, BD, OldTime, Time,OldReward, Reward):-
+	rb(W),
+	ubicacion_actual(Ub), 
+	ubicar_objeto(O,Ub),
+	quieroClase(O,W,Obj),
+	brazos_robot(R),
+	quieroProbAccionObjeto(Obj,agarrar, P,Tm, Rw),Time is OldTime+Tm,
+	dif(R,false),
+	accion_realizada(P,T),
+	((T == true) -> agarrar_objeto(O,R,W,BD), Reward is OldReward+Rw ; write('no pude agarrar :('), Reward is OldReward, BD = false)
+	;
+	write('no pude agarrar :( tengo las manos ocupadas'), BD = false, Reward is OldReward+0, Time is 0.
+
+/*colocar el objeto O en el lugar en el que esta el robot, BD modificada si realizo la accion. */
+colocar(O, BD, OldTime,Time,OldReward, Reward):-
+	rb(W),
+	quieroClase(O,W,Obj),
+	nth0(0,Obj,IDO),
+	segundoTermino(IDO,Y),
+	brazos_robot_actual(Y,Bra),
+	dif(Bra,false),
+	ubicacion_actual(Ub),
+	quieroLugar(Ub,W,Lug),
+	nth0(2,Lug,Props),
+	member(nombre=>L,Props),
+	quieroProbAccionObjeto(Obj,entregar, P,Tm, Rw),
+	Time is OldTime+Tm,
+	accion_realizada(P,T),
+	(
+		(T == true)->
+		Reward is OldReward+Rw, modificaRelacion(ubicacion, O, L, W, BD1), eliminaRelacion(agarro, Bra, BD1, BD);
+		write('no pude colocar :('), BD = false, Reward is OldReward
+	);
+	write('no puedo colocar, no tengo eso en las manos'), BD = false, Reward is OldReward, Time is 0.
+
+
+
+ejecutar([],_,_,_):-!.
+ejecutar([H],StartTime,Time,Reward):-
+	nth0(0,H,Accion),
+	nth0(1,H,CoL), write(Accion),nl, write(CoL),nl,
+	(
+	(Accion == buscar),
+		buscar(CoL,P,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( 
+			(P == true),ejecutar([],NT,NewTime,NR);
+			(P == false),( (NT == 0), (NR == 0), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
+			ejecutar([H],NT,NewTime,NR) )
+		)
+	; 
+	(Accion == mover),
+		mover(CoL, BD, StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( (BD == false),ejecutar([H],NT,NewTime,NR); commit(BD),ejecutar([],NT,NewTime,NR) )
+	;
+	(Accion == agarrar),
+		agarrar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( (BD == false),ejecutar([H],NT,NewTime,NR) ; 
+		  (BD == false),(NT == 0),(NR == 0), write('no puedo agarrar el objeto de ahi'), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
+		  commit(BD) ,ejecutar([],NT,NewTime,NR)
+		)
+	;
+	(Accion == colocar),
+		colocar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( (BD == false),ejecutar([H],NT,NewTime,NR); commit(BD),ejecutar([],NT,NewTime,NR) )
+	; 
+	(Time == 0),write('ya no queda tiempo!'),nl,fail
+	;
+	write('algo salio mal :( '),nl,fail
+	)
+	.
+
+ejecutar([H|T],StartTime,Time,Reward):-
+	nth0(0,H,Accion),
+	nth0(1,H,CoL), write(Accion),nl, write(CoL),nl,
+	(
+	(Accion == buscar),
+		buscar(CoL,P,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( 
+			(P == true), ejecutar(T,NT,NewTime,NR);
+			(P == false),(NT == 0), (NR == 0), write('no puedo buscar el objeto ahi'), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
+			(P == false),ejecutar([H|T],NT,NewTime,NR)
+		)
+	; 
+	(Accion == mover),
+		mover(CoL, BD, StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( (BD == false),ejecutar([H],NT,NewTime,NR); commit(BD),ejecutar(T,NT,NewTime,NR) )
+	;
+	(Accion == agarrar),
+		agarrar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( (BD == false),ejecutar([H|T],NT,NewTime,NR) ; 
+		  (BD == false),(NT == 0),(NR == 0), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
+		  commit(BD) ,ejecutar(T,NT,NewTime,NR)
+		)
+	;
+	(Accion == colocar),
+		colocar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		( (BD == false),ejecutar([H|T],NT,NewTime,NR); commit(BD),ejecutar(T,NT,NewTime,NR) )
+	; 
+	(Time == 0),write('ya no queda tiempo!'),nl,fail
+	;
+	write('algo salio mal :( '),nl,fail
+	)
+	.
