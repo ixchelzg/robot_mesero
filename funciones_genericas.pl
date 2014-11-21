@@ -158,7 +158,7 @@ mover(L, BD, OldTime,Time,OldReward, Reward):-
 	Time is OldTime+Tm, 
 	(T == true)-> 
 		Reward is OldReward+Rw, modificaPropiedad(ubicacion, robot, X, BD) ; 
-		write('no me pude mover :('), BD = false,  Reward is OldReward.
+		write('no me pude mover :('),nl, BD = false,  Reward is OldReward.
 
 
 /* Para buscar el objeto O, P = true or false/ lo hizo o no?, Time=Tiempo q lleva, Oldtime pa pasarle el viejo */
@@ -170,11 +170,11 @@ buscar(O,P, OldTime,Time, OldReward, Reward):-
 	quieroProbAccionObjeto(Obj,buscar, Pro,Tm, Rw),
 	Time is OldTime+Tm,
 	accion_realizada(Pro,T),
-	(T == true)-> 
-		( P=true, Reward is OldReward+Rw ;
-		P=false,  Reward is OldReward )
-	;
-	write('no pude buscar, en este lugar no hay nada'), P = false, Reward is OldReward, Time is 0.
+	(
+	T==true,(P=true, Reward is OldReward+Rw); 
+	T==false,(P=false, Reward is OldReward)
+	);
+	write('no pude buscar, en este lugar no hay nada'),nl, P = false, Reward is OldReward, Time is 0.
 
 /*colocar el objeto O en la mano libre del robot, si es q la tiene, BD modificada si realizo la accion. */
 agarrar(O, BD, OldTime, Time,OldReward, Reward):-
@@ -186,9 +186,11 @@ agarrar(O, BD, OldTime, Time,OldReward, Reward):-
 	quieroProbAccionObjeto(Obj,agarrar, P,Tm, Rw),Time is OldTime+Tm,
 	dif(R,false),
 	accion_realizada(P,T),
-	((T == true) -> agarrar_objeto(O,R,W,BD), Reward is OldReward+Rw ; write('no pude agarrar :('), Reward is OldReward, BD = false)
-	;
-	write('no pude agarrar :( tengo las manos ocupadas'), BD = false, Reward is OldReward+0, Time is 0.
+	(
+	T == true,agarrar_objeto(O,R,W,BD), Reward is OldReward+Rw ;
+	T == false, write('no pude agarrar :('), Reward is OldReward, BD = false 
+	);
+	write('no pude agarrar :( tengo las manos ocupadas'),nl, BD = false, Reward is OldReward+0, Time is 0.
 
 /*colocar el objeto O en el lugar en el que esta el robot, BD modificada si realizo la accion. */
 colocar(O, BD, OldTime,Time,OldReward, Reward):-
@@ -206,11 +208,10 @@ colocar(O, BD, OldTime,Time,OldReward, Reward):-
 	Time is OldTime+Tm,
 	accion_realizada(P,T),
 	(
-		(T == true)->
-		Reward is OldReward+Rw, modificaRelacion(ubicacion, O, L, W, BD1), eliminaRelacion(agarro, Bra, BD1, BD);
-		write('no pude colocar :('), BD = false, Reward is OldReward
+	T == true,Reward is OldReward+Rw, modificaRelacion(ubicacion, O, L, W, BD1), eliminaRelacion(agarro, Bra, BD1, BD);
+	T == false,write('no pude colocar :('), BD = false, Reward is OldReward
 	);
-	write('no puedo colocar, no tengo eso en las manos'), BD = false, Reward is OldReward, Time is 0.
+	write('no puedo colocar, no tengo eso en las manos'),nl, BD = false, Reward is OldReward, Time is 0.
 
 
 
@@ -219,8 +220,12 @@ ejecutar([H],StartTime,Time,Reward):-
 	nth0(0,H,Accion),
 	nth0(1,H,CoL), write(Accion),nl, write(CoL),nl,
 	(
+	Time =< 0,
+	write('ya no queda tiempo!'),nl,fail
+	;
 	(Accion == buscar),
-		buscar(CoL,P,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		buscar(CoL,P,StartTime,NT,Reward,NR), NewTime is NT, write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en buscar:'),write(NT-StartTime),nl,
 		( 
 			(P == true),ejecutar([],NT,NewTime,NR);
 			(P == false),( (NT == 0), (NR == 0), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
@@ -228,22 +233,23 @@ ejecutar([H],StartTime,Time,Reward):-
 		)
 	; 
 	(Accion == mover),
-		mover(CoL, BD, StartTime,NT,Reward,NR), NewTime is Time-NT,
+		mover(CoL, BD, StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en moverse:'),write(NT-StartTime),nl,
 		( (BD == false),ejecutar([H],NT,NewTime,NR); commit(BD),ejecutar([],NT,NewTime,NR) )
 	;
 	(Accion == agarrar),
-		agarrar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		agarrar(CoL,BD,StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en agarrar:'),write(NT-StartTime),nl,
 		( (BD == false),ejecutar([H],NT,NewTime,NR) ; 
 		  (BD == false),(NT == 0),(NR == 0), write('no puedo agarrar el objeto de ahi'), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
 		  commit(BD) ,ejecutar([],NT,NewTime,NR)
 		)
 	;
 	(Accion == colocar),
-		colocar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		colocar(CoL,BD,StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en colocar:'),write(NT-StartTime),nl,
 		( (BD == false),ejecutar([H],NT,NewTime,NR); commit(BD),ejecutar([],NT,NewTime,NR) )
 	; 
-	(Time == 0),write('ya no queda tiempo!'),nl,fail
-	;
 	write('algo salio mal :( '),nl,fail
 	)
 	.
@@ -252,8 +258,12 @@ ejecutar([H|T],StartTime,Time,Reward):-
 	nth0(0,H,Accion),
 	nth0(1,H,CoL), write(Accion),nl, write(CoL),nl,
 	(
+	Time =< 0,
+	write('ya no queda tiempo!'),nl,fail
+	;
 	(Accion == buscar),
-		buscar(CoL,P,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		buscar(CoL,P,StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en buscar:'),write(NT-StartTime),nl,
 		( 
 			(P == true), ejecutar(T,NT,NewTime,NR);
 			(P == false),(NT == 0), (NR == 0), write('no puedo buscar el objeto ahi'), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
@@ -261,22 +271,24 @@ ejecutar([H|T],StartTime,Time,Reward):-
 		)
 	; 
 	(Accion == mover),
-		mover(CoL, BD, StartTime,NT,Reward,NR), NewTime is Time-NT,
+		mover(CoL, BD, StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en moverse:'),write(NT-StartTime),nl,
 		( (BD == false),ejecutar([H],NT,NewTime,NR); commit(BD),ejecutar(T,NT,NewTime,NR) )
 	;
 	(Accion == agarrar),
-		agarrar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		agarrar(CoL,BD,StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en agarrar:'),write(NT-StartTime),nl,
 		( (BD == false),ejecutar([H|T],NT,NewTime,NR) ; 
 		  (BD == false),(NT == 0),(NR == 0), write(CoL),nl, ejecutar([],NT,NewTime,NR); 
 		  commit(BD) ,ejecutar(T,NT,NewTime,NR)
 		)
 	;
 	(Accion == colocar),
-		colocar(CoL,BD,StartTime,NT,Reward,NR), NewTime is Time-NT,
+		colocar(CoL,BD,StartTime,NT,Reward,NR), NewTime is NT,write('Tiempo que queda:'),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
+		write('Empezo en:'),write(StartTime),write(' y le tomo en colocar:'),write(NT-StartTime),nl,
 		( (BD == false),ejecutar([H|T],NT,NewTime,NR); commit(BD),ejecutar(T,NT,NewTime,NR) )
 	; 
-	(Time == 0),write('ya no queda tiempo!'),nl,fail
-	;
 	write('algo salio mal :( '),nl,fail
 	)
 	.
+	

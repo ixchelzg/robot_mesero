@@ -1,0 +1,3 @@
+Robot mesero.
+
+%ejecutar([[mover,estante2],[buscar,agua],[agarrar,agua],[mover,mesa2],[colocar,agua]],0,100,0).
