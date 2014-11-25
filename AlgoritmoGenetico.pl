@@ -40,14 +40,16 @@ cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento
 													!.
 cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Poblacion,ListaDeActividadesPosibles,MejorIndividuo):-
 													Generaciones > 0,
-													evaluaPoblacion(Poblacion,ListaDeActividadesPosibles,PoblacionEvaluada),
+													obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado),
+													!,
+													evaluaPoblacion(Poblacion,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada),
 													ordenaPoblacion(PoblacionEvaluada,PoblacionOrdenada),
 													PoblacionOrdenada = [MejorIndividuoActual|ElResto],
 													cruzaPoblacion(PoblacionOrdenada,ProbabilidadDeCruzamiento,PoblacionCruzada),
 													mutaPoblacion(PoblacionCruzada,ProbabilidadDeMutacion,NumeroDeAcciones,PoblacionMutada),
 													%% Hacemos estoporque estamos usando elitismo total.
 													append(PoblacionOrdenada,PoblacionMutada,PoblacionDoble),
-													evaluaPoblacion(PoblacionDoble,ListaDeActividadesPosibles,PoblacionDobleEvaluada),
+													evaluaPoblacion(PoblacionDoble,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionDobleEvaluada),
 													ordenaPoblacion(PoblacionDobleEvaluada,PoblacionDobleOrdenada),
 													%% Aqui regresamos a la población del tamaño original con los mejores individuos.
 													split_at(NumeroDeIndividuos,PoblacionDobleOrdenada,PoblacionSuperior,PoblacionInferior),
@@ -100,23 +102,49 @@ generaUNindividuoAleatorio(Tamano,NumeroDeAcciones,Individuo):-
 													!.
 
 %% Esto saca el fitness de la población entera.
-evaluaPoblacion([],ListaDeActividadesPosibles,PoblacionEvaluada):-
+evaluaPoblacion([],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada):-
 													PoblacionEvaluada = [],
 													!.
-evaluaPoblacion([PrimerIndividuo|RestoDeIndividuos],ListaDeActividadesPosibles,PoblacionEvaluada):-
-													evaluaPoblacion(RestoDeIndividuos,ListaDeActividadesPosibles,PoblacionEvaluadaIncompleta),
+evaluaPoblacion([PrimerIndividuo|RestoDeIndividuos],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada):-
+													evaluaPoblacion(RestoDeIndividuos,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluadaIncompleta),
 													PrimerIndividuo = [Fitness|Genes],
-													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Fitness2),
+													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Fitness2),
 													append(PoblacionEvaluadaIncompleta,[[Fitness2|Genes]],PoblacionEvaluada),
 													!.
 
+obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado):-
+													extensionDeUnaClaseInicio('robot',PartesDelRobot),
+													regresaTuplaPorNombreInicio('robot',Robot),
+													Robot = [_,_,_,[ClaveLocalizacionSinExtraer|_]],
+													segundoTermino(ClaveLocalizacionSinExtraer,ClaveLocalizacion),
+													regresaTuplaPorIdInicio(ClaveLocalizacion,Lugar),
+													regresaNombre(Lugar,Localizacion),
+													PartesDelRobot = [BraIzq,BraDer],
+													regresaTuplaPorNombreInicio(BraDer,BrazoDer),
+													BrazoDer = [_,_,_,[ClaveBrazoDerechoSinExtraer|_]],
+													segundoTermino(ClaveBrazoDerechoSinExtraer,ClaveBrazoDerecho),
+													regresaTuplaPorIdInicio(ClaveBrazoDerecho,BrazoDere),
+													regresaNombre(BrazoDere,BrazoDerecho),
+													regresaTuplaPorNombreInicio(BraIzq,BrazoIzq),
+													BrazoIzq = [_,_,_,[ClaveBrazoIzquierdoSinExtraer|_]],
+													segundoTermino(ClaveBrazoIzquierdoSinExtraer,ClaveBrazoIzquierdo),
+													regresaTuplaPorIdInicio(ClaveBrazoIzquierdo,BrazoIzqer),
+													regresaNombre(BrazoIzqer,BrazoIzquierdo),
+													Encontrado = 'False',
+													!.
+
 %% Esto le saca el fitness a un individuo solo.
-evaluaIndividuo([],ListaDeActividadesPosibles,Fitness):- 
+evaluaIndividuo([],ListaDeActividadesPosibles,_,_,_,_,Fitness):- 
 													Fitness is 0,
 													!.
-evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Fitness):-
+evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Fitness):-
+													
+													% que regrese lo pedido y no otras cosas
+
+													% que sea congruente
+
 													regresaRecompensa(Cabeza,ListaDeActividadesPosibles,Recompensa),
-													evaluaIndividuo(Cola,ListaDeActividadesPosibles,FitnessIncompleto),
+													evaluaIndividuo(Cola,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,FitnessIncompleto),
 													Fitness is Recompensa + FitnessIncompleto,
 													!.
 
@@ -130,6 +158,9 @@ regresaRecompensa(NumeroDeActividad,[SiguienteAccitividad|RestoDeActividades],Re
 													;
 													regresaRecompensa(NumeroDeActividad,RestoDeActividades,Recompensa),
 													!.
+
+%% Esto revisa que las precondiciones de cierta accion se cumplan para que el plan sea posible
+
 
 %% Esto ordena de mayor a menor una población según el fitness (primer entrada) de cada individuo.
 ordenaPoblacion(PoblacionEvaluada,PoblacionOrdenada):-
@@ -426,13 +457,13 @@ rb(Y):- Y = [
 		id=>o2,
 		id_padre=>c1,
 		[nombre=>brazoIzquierdo],
-		[]
+		[cargando=>o2]
 	],
 	[
 		id=>o3,
 		id_padre=>c1,
 		[nombre=>brazoDerecho],
-		[]
+		[cargando=>o3]
 	],
 	[
 		id=>c4,
