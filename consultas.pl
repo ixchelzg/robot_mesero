@@ -73,8 +73,7 @@ modificaRelacion(P,X,P1, W,BD):-
 
 
 /*modificaPropiedad(Propiedad, Clase/Objeto, Valor Nuevo, Regresa la BD con la prop modificada en BD)*/
-modificaPropiedad(P,X,P1,BD):-
-	rb(W), 
+modificaPropiedad(P,X,P1,W,BD):-
 	quieroClase(X,W,Cl),
 	nth0(3,Cl,Props),
 	member(P=>Xv,Props),
