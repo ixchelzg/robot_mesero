@@ -3,8 +3,11 @@
 %%  Algoritmo Genetico para generar soluciones al problema del robot de servicio.
 
 %% Esto Establece la generación aleatoria inicial y llama la parte cíclica del algoritmo.
-algoritmoGenetico(NumeroDeIndividuos,Tamano,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,MejorIndividuo):-
-													regresaTodaLaActividad(ListaDeActividadesPosibles),
+algoritmoGenetico(NumeroDeIndividuos,Tamano,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,AccionesIdeales,MejorIndividuo):-
+													regresaTodaLaActividad(AccionesIdeales,ListaDeActividadesPosibles),
+													%%write('ListaDeActividadesPosibles: '),
+													%%write(ListaDeActividadesPosibles),
+													%%nl,
 													length(ListaDeActividadesPosibles,NumeroDeAcciones),
 													generaPoblacionAleatoria(NumeroDeIndividuos,Tamano,NumeroDeAcciones,Poblacion),
 													cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Poblacion,ListaDeActividadesPosibles,MejorIndividuoSinTraducir),
@@ -27,7 +30,7 @@ traduceAccion(NumeroDeActividad,[],AccionTraducida):-
 													!.
 traduceAccion(NumeroDeActividad,[SiguienteAccitividad|RestoDeActividades],AccionTraducida):-
 													SiguienteAccitividad = [NumeroDeActividad|Actividad],
-													Actividad = [A,_,D,_,_,_],
+													Actividad = [A,_,D,_,_,_,_,_],
 													AccionTraducida = [A,D],
 													!
 													;
@@ -108,7 +111,7 @@ evaluaPoblacion([],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzq
 evaluaPoblacion([PrimerIndividuo|RestoDeIndividuos],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada):-
 													evaluaPoblacion(RestoDeIndividuos,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluadaIncompleta),
 													PrimerIndividuo = [Fitness|Genes],
-													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Fitness2),
+													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',Fitness2),
 													append(PoblacionEvaluadaIncompleta,[[Fitness2|Genes]],PoblacionEvaluada),
 													!.
 
@@ -134,30 +137,24 @@ obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado):-
 													!.
 
 %% Esto le saca el fitness a un individuo solo.
-evaluaIndividuo([],ListaDeActividadesPosibles,_,_,_,_,Fitness):- 
+evaluaIndividuo([],ListaDeActividadesPosibles,_,_,_,_,PrerrequisitoVerbo,PrerrequisitoObjeto,Fitness):- 
 													Fitness is 0,
 													!.
-evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Fitness):-
+evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PrerrequisitoVerbo,PrerrequisitoObjeto,Fitness):-
 													
 													% que regrese lo pedido y no otras cosas
-
 													% que sea congruente
-
-													regresaRecompensa(Cabeza,ListaDeActividadesPosibles,Recompensa),
-													evaluaIndividuo(Cola,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,FitnessIncompleto),
+													nth1(Cabeza,ListaDeActividadesPosibles,Actividad),
+													Actividad = [_,Verbo,_,Objeto,_,_,Recompensa,PrerrequisitoVerbo,PrerrequisitoObjeto],
+													evaluaIndividuo(Cola,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Verbo,Objeto,FitnessIncompleto),
 													Fitness is Recompensa + FitnessIncompleto,
-													!.
-
-regresaRecompensa(NumeroDeActividad,[],Recompensa):- 
-													Recompensa = 0,
-													!.
-regresaRecompensa(NumeroDeActividad,[SiguienteAccitividad|RestoDeActividades],Recompensa):-								
-													SiguienteAccitividad = [NumeroDeActividad|Actividad],
-													Actividad = [_,_,_,_,_,Recompensa],
 													!
 													;
-													regresaRecompensa(NumeroDeActividad,RestoDeActividades,Recompensa),
+													evaluaIndividuo(Cola,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Verbo,Objeto,FitnessIncompleto),
+													Fitness is + FitnessIncompleto,
 													!.
+
+
 
 %% Esto revisa que las precondiciones de cierta accion se cumplan para que el plan sea posible
 
@@ -228,8 +225,8 @@ mutaIndividuos(ElPrimero,ProbabilidadDeMutacion,NumeroDeAcciones,ElPrimeroMutado
 													!.
 
 % Regresa toda la actividad posible del robot
-regresaTodaLaActividad(Y):-
-													regresaTodasLasAccionesInicio(Y1),
+regresaTodaLaActividad(AccionesIdeales,Y):-
+													regresaTodasLasAccionesInicio(AccionesIdeales,Y1),
 													regresaTodosLosMovimientosInicio(Y2),
 													append(Y1,Y2,Y3),
 													numeraLasActividades(1,Y3,Y),
@@ -239,29 +236,51 @@ numeraLasActividades(_,[],Y):-
 													Y = [],
 													!.
 numeraLasActividades(Indice,[X|Xs],Y):-			
-													X = [H|T],
-													Ys = [Indice|T],
-													Siguiente is Indice + 1,	
+													X = [HX|TX],
+													TX = ['movimiento',U,V,_,_,_,_,_],
+													dif(U,V),
+													YXs = [Indice|TX],
+													Siguiente is Indice + 1,
 													numeraLasActividades(Siguiente,Xs,Yt),
-													append([Ys],Yt,Y),
+													append([YXs],Yt,Y),
+													!
+													;
+													X = [HX|TX],
+													TX = ['buscar',_,_,_,_,_,_,_],
+													Xs = [X2,X3|LasDemasAcciones],
+													X2 = [HX2|TX2],
+													X3 = [HX3|TX3],
+													TX3 = [_,_,_,_,_,_,_,U],
+													dif(U,'No pedido'),
+													YXs = [Indice|TX],
+													Indice2 is Indice + 1,
+													YX2s = [Indice2|TX2],
+													Indice3 is Indice2 + 1,
+													YX3s = [Indice3|TX3],
+													Siguiente is Indice3 + 1,
+													numeraLasActividades(Siguiente,LasDemasAcciones,Yt),
+													append([YXs,YX2s,YX3s],Yt,Y),
+													!
+													;
+													numeraLasActividades(Indice,Xs,Y),
 													!.
 
 % Regresa todas la acciones posibles del robot
-regresaTodasLasAccionesInicio(Y):-
+regresaTodasLasAccionesInicio(AccionesIdeales,Y):-
 													extensionDeUnaClaseInicio('cosas',X),
-													regresaTodasLasAcciones(X,Y),
+													regresaTodasLasAcciones(AccionesIdeales,X,Y),
 													!.
 
-regresaTodasLasAcciones([],Y):- 
+regresaTodasLasAcciones(AccionesIdeales,[],Y):- 
 													Y = [],
 													!.
-regresaTodasLasAcciones([X|Xs],Y):-
-													regresaAccionesDeUnaCosa(X,Ys),
-													regresaTodasLasAcciones(Xs,Yt),
+regresaTodasLasAcciones(AccionesIdeales,[X|Xs],Y):-
+													regresaAccionesDeUnaCosa(AccionesIdeales,X,Ys),
+													regresaTodasLasAcciones(AccionesIdeales,Xs,Yt),
 													append(Ys,Yt,Y), 
 													!.
 
-regresaAccionesDeUnaCosa(X,Y):-
+regresaAccionesDeUnaCosa(AccionesIdeales,X,Y):-
 													regresaTuplaPorNombreInicio(X,Z),
 													Z = [_,_,_,L],
 													L = [Cabeza|Cola],
@@ -271,26 +290,72 @@ regresaAccionesDeUnaCosa(X,Y):-
 													regresaAcciones(Z,M),
 													M = [H,T],
 													segundoTermino(T,B),
-													tablaAcciones(X,B,Ubicacion,Y),
+													tablaAcciones(AccionesIdeales,X,B,Ubicacion,Y),
 													!.
 
 regresaAcciones(X,Y):-
 													X=[_,_,Y|_],
 													!.
 
-tablaAcciones(Dato,[],Ubicacion,Y):- 
+tablaAcciones(AccionesIdeales,Dato,[],Ubicacion,Y):- 
 													Y=[],
 													!.
-tablaAcciones(Dato,[X|Xs],Ubicacion,Y):-
+tablaAcciones(AccionesIdeales,Dato,[X|Xs],Ubicacion,Y):-													
 													X = [X1,X2,X3,X4],
 													segundoTermino(X1,Accion),
+													Accion = 'buscar',
 													segundoTermino(X2,Probadilidad),
 													segundoTermino(X3,Costo),
 													segundoTermino(X4,Recompensa),
-													T = [0,Accion,Ubicacion,Dato,Probadilidad,Costo,Recompensa],
-													tablaAcciones(Dato,Xs,Ubicacion,Yi),
+													T = [0,Accion,Ubicacion,Dato,Probadilidad,Costo,Recompensa,'movimiento',Ubicacion],
+													tablaAcciones(AccionesIdeales,Dato,Xs,Ubicacion,Yi),
+													append([T],Yi,Y),
+													!
+													;
+													X = [X1,X2,X3,X4],
+													segundoTermino(X1,Accion),
+													Accion = 'agarrar',
+													segundoTermino(X2,Probadilidad),
+													segundoTermino(X3,Costo),
+													segundoTermino(X4,Recompensa),
+													T = [0,Accion,Ubicacion,Dato,Probadilidad,Costo,Recompensa,'buscar',Dato],
+													tablaAcciones(AccionesIdeales,Dato,Xs,Ubicacion,Yi),
+													append([T],Yi,Y),
+													!
+													;
+													buscaDestino(AccionesIdeales,Dato,Destino),
+													X = [X1,X2,X3,X4],
+													segundoTermino(X1,Accion),
+													Accion = 'entregar',
+													segundoTermino(X2,Probadilidad),
+													segundoTermino(X3,Costo),
+													segundoTermino(X4,Recompensa),
+													T = [0,Accion,Ubicacion,Dato,Probadilidad,Costo,Recompensa,'movimiento',Destino],
+													tablaAcciones(AccionesIdeales,Dato,Xs,Ubicacion,Yi),
 													append([T],Yi,Y),
 													!.
+
+buscaDestino([],Dato,Destino):- 
+													Destino='No pedido',
+													!.
+buscaDestino([AccionActual,AccionSiguiente|RestoDeLasAcciones],Dato,Destino):-
+													AccionActual = [VerboActual,ObjetoActual],
+													AccionSiguiente = [VerboSiguiente,ObjetoSiguiente],
+													VerboSiguiente = 'entregar',
+													ObjetoSiguiente = Dato,
+													Destino = ObjetoActual,
+													!
+													;
+													AccionActual = [VerboActual,ObjetoActual],
+													AccionSiguiente = [VerboSiguiente,ObjetoSiguiente],
+													VerboSiguiente = 'entregar',
+													dif(ObjetoSiguiente,Dato),
+													buscaDestino(RestoDeLasAcciones,Dato,Destino),
+													!
+													;
+													buscaDestino([AccionSiguiente|RestoDeLasAcciones],Dato,Destino),
+													!.
+
 
 % Regresa todos los movimientos posibles del robot
 regresaTodosLosMovimientosInicio(Y):-
@@ -334,7 +399,7 @@ tablaMovimientos(Dato,[X|Xs],Y):-
 													segundoTermino(X2,Probadilidad),
 													segundoTermino(X3,Costo),
 													segundoTermino(X4,Recompensa),
-													T = [0,'movimiento',Dato,Nombre,Probadilidad,Costo,Recompensa],
+													T = [0,'movimiento',Dato,Nombre,Probadilidad,Costo,Recompensa,'movimiento',Dato],
 													tablaMovimientos(Dato,Xs,Yi),
 													append([T],Yi,Y),
 													!.
