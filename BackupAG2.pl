@@ -119,8 +119,8 @@ evaluaPoblacion([PrimerIndividuo|RestoDeIndividuos],ListaDeActividadesPosibles,L
 													%write('Nuevo individuo'),
 													%nl,
 													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',1,1,0,Tiempo,ListaDeCosasPorEntregar,Fitness2),
-													%reduceIndividuoAAlgoPlausible(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,IndividuoPlausibleSinFitness),
-													%evaluaIndividuo(IndividuoPlausibleSinFitness,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',1,1,0,Tiempo,ListaDeCosasPorEntregar,Fitness3),
+													reduceIndividuoAAlgoPlausible(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,IndividuoPlausibleSinFitness),
+													evaluaIndividuo(IndividuoPlausibleSinFitness,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',1,1,0,Tiempo,ListaDeCosasPorEntregar,Fitness3),
 													append(PoblacionEvaluadaIncompleta,[[Fitness2|Genes]],PoblacionEvaluada),
 													!.
 
@@ -295,15 +295,15 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 															BandLoc = false,
 															(
 																(Localizacion = Ubicacion, member(['movimiento', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['movimiento', Objeto], NuevaListaDeCosasPorEntregar),
+																	(	write('Ahi vamos'),
+																		nl,
 																		NuevaLocalizacion = Objeto, 
 																		NuevoEncontrado = 'robot',
 																		NuevoBrazoDerecho = BrazoDerecho,
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		Band = true)
 																;
-																	(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																		NuevaLocalizacion = Localizacion,
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoDerecho = BrazoDerecho, 
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
@@ -318,16 +318,14 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 														(Verbo = 'buscar')->
 															BandEnc = false,
 															(
-																(Localizacion = Ubicacion, (BrazoDerecho = 'brazoDerecho'; BrazoIzquierdo = 'brazoIzquierdo'), (not(BrazoDerecho = Objeto), not(BrazoIzquierdo = Objeto)), not(Encontrado = Objeto), member(['buscar', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['buscar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion, 
+																(Localizacion = Ubicacion, (BrazoDerecho = 'brazoDerecho'; BrazoIzquierdo = 'brazoIzquierdo'), (not(BrazoDerecho = Objeto), not(BrazoIzquierdo = Objeto)), not(Encontrado = Objeto))->
+																	(NuevaLocalizacion = Localizacion, 
 																		NuevoEncontrado = Objeto, 
 																		NuevoBrazoDerecho = BrazoDerecho,
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		Band = true)
 																;
-																	(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																		NuevaLocalizacion = Localizacion,
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoDerecho = BrazoDerecho,
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
@@ -342,9 +340,8 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 														(Verbo = 'agarrar')->
 															BandAg = false,
 															(
-																(Localizacion = Ubicacion, Encontrado = Objeto, BrazoDerecho = 'brazoDerecho', member(['agarrar', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['agarrar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion, 
+																(Localizacion = Ubicacion, Encontrado = Objeto, BrazoDerecho = 'brazoDerecho')->
+																	(NuevaLocalizacion = Localizacion, 
 																		NuevoEncontrado = 'robot',
 																		NuevoBrazoDerecho = Objeto, 
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
@@ -352,9 +349,8 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 																		MegaMult = 1)
 																;
 																	(
-																		(Localizacion = Ubicacion, Encontrado = Objeto, BrazoIzquierdo = 'brazoIzquierdo', not(BrazoDerecho = 'brazoDerecho'), not(BrazoDerecho = Objeto), member(['agarrar', Objeto],ListaDeCosasPorEntregar))->
-																			(delete(ListaDeCosasPorEntregar, ['agarrar', Objeto], NuevaListaDeCosasPorEntregar),
-																				NuevaLocalizacion = Localizacion, 
+																		(Localizacion = Ubicacion, Encontrado = Objeto, BrazoIzquierdo = 'brazoIzquierdo', not(BrazoDerecho = 'brazoDerecho'), not(BrazoDerecho = Objeto))->
+																			(NuevaLocalizacion = Localizacion, 
 																				NuevoEncontrado = 'robot',
 																				NuevoBrazoDerecho = BrazoDerecho,
 																				NuevoBrazoIzquierdo = Objeto, 
@@ -362,8 +358,7 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 																				MegaMult = 1000
 																				)
 																		;
-																			(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																				NuevaLocalizacion = Localizacion, 
+																			(NuevaLocalizacion = Localizacion, 
 																				NuevoEncontrado = Encontrado,
 																				NuevoBrazoDerecho = BrazoDerecho,
 																				NuevoBrazoIzquierdo = BrazoIzquierdo,
@@ -381,9 +376,8 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 														(Verbo = 'entregar')->
 															BandEnt = false,
 															(
-																(Localizacion = Ubicacion, BrazoDerecho = Objeto, member(['entregar', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['entregar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion,
+																(Localizacion = Ubicacion, BrazoDerecho = Objeto)->
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoDerecho = 'brazoDerecho', 
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
@@ -391,16 +385,14 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 																;
 
 																(
-																	(Localizacion = Ubicacion, BrazoIzquierdo = Objeto, member(['entregar', Objeto],ListaDeCosasPorEntregar))->
-																		(delete(ListaDeCosasPorEntregar, ['entregar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion,
+																	(Localizacion = Ubicacion, BrazoIzquierdo = Objeto)->
+																		(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoIzquierdo = 'brazoIzquierdo',
 																		NuevoBrazoDerecho = BrazoDerecho,
 																		Band = true)
 																	;
-																	(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																		NuevaLocalizacion = Localizacion,
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		NuevoBrazoDerecho = BrazoDerecho, 
@@ -442,7 +434,7 @@ evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerec
 
 													NuevoCostoAcumulado is CostoAcumulado + Costo,
 
-													evaluaIndividuo(Cola,ListaDeActividadesPosibles,NuevaLocalizacion,NuevoBrazoDerecho,NuevoBrazoIzquierdo,NuevoEncontrado,PrerrequisitoVerbo,PrerrequisitoObjeto,NuevoMultiplicador,NuevaProbabilidadAcumulada,NuevoCostoAcumulado,NuevoTiempo,NuevaListaDeCosasPorEntregar,FitnessIncompleto),
+													evaluaIndividuo(Cola,ListaDeActividadesPosibles,NuevaLocalizacion,NuevoBrazoDerecho,NuevoBrazoIzquierdo,NuevoEncontrado,PrerrequisitoVerbo,PrerrequisitoObjeto,NuevoMultiplicador,NuevaProbabilidadAcumulada,NuevoCostoAcumulado,NuevoTiempo,ListaDeCosasPorEntregar,FitnessIncompleto),
 
 													FitnessMejorado is ((((Recompensa + L1) * L2 * NuevoMultiplicador * MegaMult * NuevaProbabilidadAcumulada) - Costo) * MultTiempo),
 													Fitness is (FitnessIncompleto + FitnessMejorado) * NuevoMultiplicador,
