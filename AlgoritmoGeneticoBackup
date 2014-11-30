@@ -3,20 +3,16 @@
 %%  Algoritmo Genetico para generar soluciones al problema del robot de servicio.
 
 %% Esto Establece la generación aleatoria inicial y llama la parte cíclica del algoritmo.
-algoritmoGenetico(NumeroDeIndividuos,Tamano,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Tiempo,AccionesIdeales,MejorIndividuo):-
+algoritmoGenetico(NumeroDeIndividuos,Tamano,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,AccionesIdeales,MejorIndividuo):-
 													regresaTodaLaActividad(AccionesIdeales,ListaDeActividadesPosibles),
-													%write('ListaDeActividadesPosibles: '),
-													%write(ListaDeActividadesPosibles),
-													%nl,
+													%%write('ListaDeActividadesPosibles: '),
+													%%write(ListaDeActividadesPosibles),
+													%%nl,
 													length(ListaDeActividadesPosibles,NumeroDeAcciones),
-													length(AccionesIdeales,Tam),
-													Tama is (Tam / 5),
-													obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado),
-													generaPoblacionAleatoria(NumeroDeIndividuos,Tamano,NumeroDeAcciones,Tama,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,ListaDeActividadesPosibles,Poblacion),
-													cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Poblacion,ListaDeActividadesPosibles,Tiempo,Tama,AccionesIdeales,MejorIndividuoSinTraducir),
+													generaPoblacionAleatoria(NumeroDeIndividuos,Tamano,NumeroDeAcciones,Poblacion),
+													cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Poblacion,ListaDeActividadesPosibles,MejorIndividuoSinTraducir),
 													MejorIndividuoSinTraducir = [Fitness|Acciones],
-													reduceIndividuoAAlgoPlausible(Acciones,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,IndividuoPlausibleSinFitness),
-													traduceIndividuo(IndividuoPlausibleSinFitness,ListaDeActividadesPosibles,MejorIndividuoSinFitness),
+													traduceIndividuo(Acciones,ListaDeActividadesPosibles,MejorIndividuoSinFitness),
 													MejorIndividuo = [Fitness|MejorIndividuoSinFitness],
 													!.
 
@@ -42,26 +38,45 @@ traduceAccion(NumeroDeActividad,[SiguienteAccitividad|RestoDeActividades],Accion
 													!.									
 
 %% Esto es el ciclo básico del algoritmo genético.
-cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,0,Poblacion,ListaDeActividadesPosibles,Tiempo,Tama,ListaDeCosasPorEntregar,MejorIndividuo):-
+cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,0,Poblacion,ListaDeActividadesPosibles,MejorIndividuo):-
 													MejorIndividuo = [0,0],
 													!.
-cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Poblacion,ListaDeActividadesPosibles,Tiempo,Tama,ListaDeCosasPorEntregar,MejorIndividuo):-
+cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generaciones,Poblacion,ListaDeActividadesPosibles,MejorIndividuo):-
 													Generaciones > 0,
 													obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado),
-													evaluaPoblacion(Poblacion,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Tiempo,ListaDeCosasPorEntregar,PoblacionEvaluada),
+													% write('Estado Del Robot: '),
+													% nl,
+													% write('Localizacion: '),
+													% write(Localizacion),
+													% nl,
+													% write('BrazoDerecho: '),
+													% write(BrazoDerecho),
+													% nl,
+													% write('BrazoIzquierdo: '),
+													% write(BrazoIzquierdo),
+													% nl,
+													% write('Encontrado: '),
+													% write(Encontrado),
+													% nl,
+													evaluaPoblacion(Poblacion,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada),
 													ordenaPoblacion(PoblacionEvaluada,PoblacionOrdenada),
 													PoblacionOrdenada = [MejorIndividuoActual|ElResto],
 													cruzaPoblacion(PoblacionOrdenada,ProbabilidadDeCruzamiento,PoblacionCruzada),
-													mutaPoblacion(PoblacionCruzada,ProbabilidadDeMutacion,NumeroDeAcciones,Tama,PoblacionMutada),
+													mutaPoblacion(PoblacionCruzada,ProbabilidadDeMutacion,NumeroDeAcciones,PoblacionMutada),
 													%% Hacemos estoporque estamos usando elitismo total.
 													append(PoblacionOrdenada,PoblacionMutada,PoblacionDoble),
-													evaluaPoblacion(PoblacionDoble,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Tiempo,ListaDeCosasPorEntregar,PoblacionDobleEvaluada),
+													evaluaPoblacion(PoblacionDoble,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionDobleEvaluada),
 													ordenaPoblacion(PoblacionDobleEvaluada,PoblacionDobleOrdenada),
 													%% Aqui regresamos a la población del tamaño original con los mejores individuos.
 													split_at(NumeroDeIndividuos,PoblacionDobleOrdenada,PoblacionSuperior,PoblacionInferior),
 													Generacioncitas is Generaciones - 1,
-													cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generacioncitas,PoblacionSuperior,ListaDeActividadesPosibles,Tiempo,Tama,ListaDeCosasPorEntregar,MejorIndividuoPreliminar),
+													cicloBasico(NumeroDeIndividuos,Tamano,NumeroDeAcciones,ProbabilidadDeCruzamiento,ProbabilidadDeMutacion,Generacioncitas,PoblacionSuperior,ListaDeActividadesPosibles,MejorIndividuoPreliminar),
 													mejor(MejorIndividuoActual,MejorIndividuoPreliminar,MejorIndividuo),
+													% write('Generacion: '),
+													% write(Generaciones),
+													% write(', Mejor Individuo: '),
+													% write(MejorIndividuoActual),
+													% nl,
 													!.
 
 %% Esto regresa el individuo que tiene el fitness más grande.
@@ -78,178 +93,46 @@ mejor(PrimerIndividuo,SegundoIndividuo,MaximoIndividuo):-
 													!.					
 
 %% Esto va a generar una poblacion aleatoria.
-generaPoblacionAleatoria(0,Tamano,NumeroDeAcciones,Tama,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,ListaDeActividadesPosibles,Poblacion):- 
+generaPoblacionAleatoria(0,Tamano,NumeroDeAcciones,Poblacion):- 
 													Poblacion = [],
 													!.
-generaPoblacionAleatoria(NumeroDeIndividuos,Tamano,NumeroDeAcciones,Tama,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,ListaDeActividadesPosibles,Poblacion):-
+generaPoblacionAleatoria(NumeroDeIndividuos,Tamano,NumeroDeAcciones,Poblacion):-
 													NumeroDeIndividuos > 0,
 													NumeritoDeIndividuos is NumeroDeIndividuos - 1,
-													generaPoblacionAleatoria(NumeritoDeIndividuos,Tamano,NumeroDeAcciones,Tama,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,ListaDeActividadesPosibles,PoblacionAnterior),
-													generaUNindividuoAleatorio(Tamano,NumeroDeAcciones,Tama,Individuo),
+													generaPoblacionAleatoria(NumeritoDeIndividuos,Tamano,NumeroDeAcciones,PoblacionAnterior),
+													generaUNindividuoAleatorio(Tamano,NumeroDeAcciones,Individuo),
 													append([0],Individuo,IndividuoConFitness),
 													append(PoblacionAnterior,[IndividuoConFitness],Poblacion),
 													!.
 
 %% Esto van a generar un individuo aleatorio.
-generaUNindividuoAleatorio(0,NumeroDeAcciones,Tama,Individuo):- 
+generaUNindividuoAleatorio(0,NumeroDeAcciones,Individuo):- 
 													Individuo = [],
 													!.
-generaUNindividuoAleatorio(Tamano,NumeroDeAcciones,Tama,Individuo):-
+generaUNindividuoAleatorio(Tamano,NumeroDeAcciones,Individuo):-
  													Tamano > 0,	
 													Tamanito is Tamano - 1,
-													generaUNindividuoAleatorio(Tamanito,NumeroDeAcciones,Tama,IndividuoAnterior),
+													generaUNindividuoAleatorio(Tamanito,NumeroDeAcciones,IndividuoAnterior),
 													random(Chanza),
-													Taman is 3 * Tama,
-													Tamani is Tama + 1,
 													((Chanza < 0.5)->
-														random_between(1,Taman,Aleatorio)
+														random_between(1,3,Aleatorio)
 													;
-														random_between(Tamani,NumeroDeAcciones,Aleatorio)
+														random_between(4,NumeroDeAcciones,Aleatorio)
 													),
 													append(IndividuoAnterior,[Aleatorio],Individuo),
 													!.
 
 %% Esto saca el fitness de la población entera.
-evaluaPoblacion([],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Tiempo,ListaDeCosasPorEntregar,PoblacionEvaluada):-
+evaluaPoblacion([],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada):-
 													PoblacionEvaluada = [],
 													!.
-evaluaPoblacion([PrimerIndividuo|RestoDeIndividuos],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Tiempo,ListaDeCosasPorEntregar,PoblacionEvaluada):-
-													evaluaPoblacion(RestoDeIndividuos,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Tiempo,ListaDeCosasPorEntregar,PoblacionEvaluadaIncompleta),
+evaluaPoblacion([PrimerIndividuo|RestoDeIndividuos],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluada):-
+													evaluaPoblacion(RestoDeIndividuos,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PoblacionEvaluadaIncompleta),
 													PrimerIndividuo = [Fitness|Genes],
 													%write('Nuevo individuo'),
 													%nl,
-													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',1,1,0,Tiempo,ListaDeCosasPorEntregar,Fitness2),
-													%reduceIndividuoAAlgoPlausible(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,IndividuoPlausibleSinFitness),
-													%evaluaIndividuo(IndividuoPlausibleSinFitness,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',1,1,0,Tiempo,ListaDeCosasPorEntregar,Fitness3),
+													evaluaIndividuo(Genes,ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,'movimiento','inicio',1,1,Fitness2),
 													append(PoblacionEvaluadaIncompleta,[[Fitness2|Genes]],PoblacionEvaluada),
-													!.
-
-reduceIndividuoAAlgoPlausible([],ListaDeActividadesPosibles,_,_,_,_,Y):- 
-													Y = [], 
-													!.
-reduceIndividuoAAlgoPlausible([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,Y):-
-
-													nth1(Cabeza,ListaDeActividadesPosibles,Actividad),
-													Actividad = [_,Verbo,Ubicacion,Objeto,_,_,_,_,_],
-													(
-													(Verbo = 'movimiento')->
-													  BandLoc = false,
-													  (
-													    (Localizacion = Ubicacion)->
-													      (NuevaLocalizacion = Objeto, 
-													        NuevoEncontrado = 'robot',
-													        NuevoBrazoDerecho = BrazoDerecho,
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        Band = true)
-													    ;
-													      (NuevaLocalizacion = Localizacion,
-													        NuevoEncontrado = Encontrado,
-													        NuevoBrazoDerecho = BrazoDerecho, 
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        Band = false)
-													  )
-													;
-													  BandLoc = true
-													),
-
-													(
-													(Verbo = 'buscar')->
-													  BandEnc = false,
-													  (
-													    (Localizacion = Ubicacion, (BrazoDerecho = 'brazoDerecho'; BrazoIzquierdo = 'brazoIzquierdo'), (not(BrazoDerecho = Objeto), not(BrazoIzquierdo = Objeto)), not(Encontrado = Objeto))->
-													      (NuevaLocalizacion = Localizacion, 
-													        NuevoEncontrado = Objeto, 
-													        NuevoBrazoDerecho = BrazoDerecho,
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        Band = true)
-													    ;
-													      (NuevaLocalizacion = Localizacion,
-													        NuevoEncontrado = Encontrado,
-													        NuevoBrazoDerecho = BrazoDerecho,
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        Band = false)
-													  )
-													;
-													  BandEnc = true
-													),
-
-													(
-													(Verbo = 'agarrar')->
-													  BandAg = false,
-													  (
-													    (Localizacion = Ubicacion, Encontrado = Objeto, BrazoDerecho = 'brazoDerecho')->
-													      (NuevaLocalizacion = Localizacion, 
-													        NuevoEncontrado = 'robot',
-													        NuevoBrazoDerecho = Objeto, 
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        Band = true)
-													    ;
-													      (
-													        (Localizacion = Ubicacion, Encontrado = Objeto, BrazoIzquierdo = 'brazoIzquierdo', not(BrazoDerecho = 'brazoDerecho'), not(BrazoDerecho = Objeto))->
-													          (NuevaLocalizacion = Localizacion, 
-													            NuevoEncontrado = 'robot',
-													            NuevoBrazoDerecho = BrazoDerecho,
-													            NuevoBrazoIzquierdo = Objeto, 
-													            Band = true)
-													        ;
-													          (NuevaLocalizacion = Localizacion, 
-													            NuevoEncontrado = Encontrado,
-													            NuevoBrazoDerecho = BrazoDerecho,
-													            NuevoBrazoIzquierdo = BrazoIzquierdo,
-													            Band = false)
-													      )
-													  )
-													;
-													  BandAg = true
-													),
-
-													(
-													(Verbo = 'entregar')->
-													  BandEnt = false,
-													  (
-													    (Localizacion = Ubicacion, BrazoDerecho = Objeto)->
-													      (NuevaLocalizacion = Localizacion,
-													        NuevoEncontrado = Encontrado,
-													        NuevoBrazoDerecho = 'brazoDerecho', 
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        Band = true)
-													    ;
-
-													    (
-													      (Localizacion = Ubicacion, BrazoIzquierdo = Objeto)->
-													        (NuevaLocalizacion = Localizacion,
-													        NuevoEncontrado = Encontrado,
-													        NuevoBrazoIzquierdo = 'brazoIzquierdo',
-													        NuevoBrazoDerecho = BrazoDerecho,
-													        Band = true)
-													      ;
-													      (NuevaLocalizacion = Localizacion,
-													        NuevoEncontrado = Encontrado,
-													        NuevoBrazoIzquierdo = BrazoIzquierdo,
-													        NuevoBrazoDerecho = BrazoDerecho, 
-													        Band = false)
-													    )
-													  )
-													;
-													  BandEnt = true
-													),
-
-													(
-													Band ->
-													  Result = true
-													;
-													  Result = false
-													),
-
-													reduceIndividuoAAlgoPlausible(Cola,ListaDeActividadesPosibles,NuevaLocalizacion,NuevoBrazoDerecho,NuevoBrazoIzquierdo,NuevoEncontrado,Yi),
-
-													(
-													Result ->
-													  append([Cabeza],Yi,Y)
-													;
-													  Y = Yi
-													),
-
 													!.
 
 obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado):-
@@ -276,176 +159,113 @@ obtieneEstadoDelRobot(Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado):-
 													!.
 
 %% Esto le saca el fitness a un individuo solo.
-evaluaIndividuo([],ListaDeActividadesPosibles,_,_,_,_,PrerrequisitoVerbo,PrerrequisitoObjeto,Multiplicador,ProbadilidadAcumulada,CostoAcumulado,Tiempo,ListaDeCosasPorEntregar,Fitness):- 
+evaluaIndividuo([],ListaDeActividadesPosibles,_,_,_,_,PrerrequisitoVerbo,PrerrequisitoObjeto,Multiplicador,ProbadilidadAcumulada,Fitness):- 
 													Fitness is 0,
 													!.
-evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PrerrequisitoVerboOriginal,PrerrequisitoObjetoOriginal,Multiplicador,ProbadilidadAcumulada,CostoAcumulado,Tiempo,ListaDeCosasPorEntregar,Fitness):-
+evaluaIndividuo([Cabeza|Cola],ListaDeActividadesPosibles,Localizacion,BrazoDerecho,BrazoIzquierdo,Encontrado,PrerrequisitoVerboOriginal,PrerrequisitoObjetoOriginal,Multiplicador,ProbadilidadAcumulada,Fitness):-
                           
 													% que regrese lo pedido y no otras cosas
 													% que sea congruente
-%write('1'),
-%nl,
+
 													nth1(Cabeza,ListaDeActividadesPosibles,Actividad),
-													Actividad = [_,Verbo,Ubicacion,Objeto,Probadilidad,Costo,Recompensa,PrerrequisitoVerbo,PrerrequisitoObjeto],
-%write('2'),
-%nl,												
+													Actividad = [_,Verbo,Ubicacion,Objeto,Probadilidad,_,Recompensa,PrerrequisitoVerbo,PrerrequisitoObjeto],
 
 													(
 														(Verbo = 'movimiento')->
 															BandLoc = false,
 															(
-																(Localizacion = Ubicacion, member(['movimiento', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['movimiento', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Objeto, 
+																(Localizacion = Ubicacion)->
+																	(NuevaLocalizacion = Objeto, 
 																		NuevoEncontrado = 'robot',
 																		NuevoBrazoDerecho = BrazoDerecho,
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		Band = true)
 																;
-																	(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																		NuevaLocalizacion = Localizacion,
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoDerecho = BrazoDerecho, 
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		Band = false)
 															)
 														;
 															BandLoc = true
 													),
-%write('3'),
-%nl,
+
 													(
 														(Verbo = 'buscar')->
 															BandEnc = false,
 															(
-																(Localizacion = Ubicacion, (BrazoDerecho = 'brazoDerecho'; BrazoIzquierdo = 'brazoIzquierdo'), (not(BrazoDerecho = Objeto), not(BrazoIzquierdo = Objeto)), not(Encontrado = Objeto), member(['buscar', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['buscar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion, 
+																(Localizacion = Ubicacion, BrazoDerecho = 'brazoDerecho', not(Encontrado = Objeto))->
+																	(NuevaLocalizacion = Localizacion, 
 																		NuevoEncontrado = Objeto, 
-																		NuevoBrazoDerecho = BrazoDerecho,
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
+																		NuevoBrazoDerecho = BrazoDerecho, 
 																		Band = true)
 																;
-																	(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																		NuevaLocalizacion = Localizacion,
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
-																		NuevoBrazoDerecho = BrazoDerecho,
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
+																		NuevoBrazoDerecho = BrazoDerecho, 
 																		Band = false)
 															)
 														;
 															BandEnc = true
 													),
-%write('4'),
-%nl,
+
 													(
 														(Verbo = 'agarrar')->
 															BandAg = false,
 															(
-																(Localizacion = Ubicacion, Encontrado = Objeto, BrazoDerecho = 'brazoDerecho', member(['agarrar', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['agarrar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion, 
+																(Localizacion = Ubicacion, Encontrado = Objeto, BrazoDerecho = 'brazoDerecho')->
+																	(NuevaLocalizacion = Localizacion, 
 																		NuevoEncontrado = 'robot',
 																		NuevoBrazoDerecho = Objeto, 
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
-																		Band = true,
-																		MegaMult = 1)
+																		Band = true)
 																;
-																	(
-																		(Localizacion = Ubicacion, Encontrado = Objeto, BrazoIzquierdo = 'brazoIzquierdo', not(BrazoDerecho = 'brazoDerecho'), not(BrazoDerecho = Objeto), member(['agarrar', Objeto],ListaDeCosasPorEntregar))->
-																			(delete(ListaDeCosasPorEntregar, ['agarrar', Objeto], NuevaListaDeCosasPorEntregar),
-																				NuevaLocalizacion = Localizacion, 
-																				NuevoEncontrado = 'robot',
-																				NuevoBrazoDerecho = BrazoDerecho,
-																				NuevoBrazoIzquierdo = Objeto, 
-																				Band = true,
-																				MegaMult = 1000
-																				)
-																		;
-																			(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																				NuevaLocalizacion = Localizacion, 
-																				NuevoEncontrado = Encontrado,
-																				NuevoBrazoDerecho = BrazoDerecho,
-																				NuevoBrazoIzquierdo = BrazoIzquierdo,
-																				Band = false,
-																				MegaMult = 1)
-																	)
+																	(NuevaLocalizacion = Localizacion, 
+																		NuevoEncontrado = Encontrado,
+																		NuevoBrazoDerecho = BrazoDerecho, 
+																		Band = false)
 															)
 														;
-															MegaMult = 1,
 															BandAg = true
 													),
-%write('5'),
-%nl,
+
 													(
 														(Verbo = 'entregar')->
 															BandEnt = false,
 															(
-																(Localizacion = Ubicacion, BrazoDerecho = Objeto, member(['entregar', Objeto],ListaDeCosasPorEntregar))->
-																	(delete(ListaDeCosasPorEntregar, ['entregar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion,
+																(Localizacion = Ubicacion, BrazoDerecho = Objeto)->
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
 																		NuevoBrazoDerecho = 'brazoDerecho', 
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		Band = true)
 																;
-
-																(
-																	(Localizacion = Ubicacion, BrazoIzquierdo = Objeto, member(['entregar', Objeto],ListaDeCosasPorEntregar))->
-																		(delete(ListaDeCosasPorEntregar, ['entregar', Objeto], NuevaListaDeCosasPorEntregar),
-																		NuevaLocalizacion = Localizacion,
+																	(NuevaLocalizacion = Localizacion,
 																		NuevoEncontrado = Encontrado,
-																		NuevoBrazoIzquierdo = 'brazoIzquierdo',
-																		NuevoBrazoDerecho = BrazoDerecho,
-																		Band = true)
-																	;
-																	(NuevaListaDeCosasPorEntregar = ListaDeCosasPorEntregar,
-																		NuevaLocalizacion = Localizacion,
-																		NuevoEncontrado = Encontrado,
-																		NuevoBrazoIzquierdo = BrazoIzquierdo,
 																		NuevoBrazoDerecho = BrazoDerecho, 
 																		Band = false)
-																)
 															)
 														;
 															BandEnt = true
 													),
-%write('6'),
-%nl,
+
 													(
 														Band ->
 															NuevoMultiplicador is Multiplicador * 2,
-															L1 is 5, 
-															L2 is 10
+															L1 is 500, 
+															L2 is 1
 														;
-															NuevoMultiplicador is 0,
+															NuevoMultiplicador is 1,
 															L1 is 0, 
-															L2 is 0
-													),
-%write('7'),
-%nl,
-
-													NuevoTiempo is Tiempo - Costo,
-
-													(
-														(NuevoTiempo >= 0) ->
-															MultTiempo is 1 * NuevoTiempo
-														;
-															MultTiempo is 0.001
+															L2 is 0.01
 													),
 
-													%write('NuevoTiempo: '),
-													%write(NuevoTiempo),
-													%nl,
+													%NuevaProbabilidadAcumulada is ProbadilidadAcumulada * Probadilidad,
 
-													NuevaProbabilidadAcumulada is ProbadilidadAcumulada * Probadilidad,
+													NuevaProbabilidadAcumulada is 1,
 
-													NuevoCostoAcumulado is CostoAcumulado + Costo,
 
-													evaluaIndividuo(Cola,ListaDeActividadesPosibles,NuevaLocalizacion,NuevoBrazoDerecho,NuevoBrazoIzquierdo,NuevoEncontrado,PrerrequisitoVerbo,PrerrequisitoObjeto,NuevoMultiplicador,NuevaProbabilidadAcumulada,NuevoCostoAcumulado,NuevoTiempo,NuevaListaDeCosasPorEntregar,FitnessIncompleto),
+													evaluaIndividuo(Cola,ListaDeActividadesPosibles,NuevaLocalizacion,NuevoBrazoDerecho,BrazoIzquierdo,NuevoEncontrado,PrerrequisitoVerbo,PrerrequisitoObjeto,NuevoMultiplicador,NuevaProbabilidadAcumulada,FitnessIncompleto),
 
-													FitnessMejorado is ((((Recompensa + L1) * L2 * NuevoMultiplicador * MegaMult * NuevaProbabilidadAcumulada) - Costo) * MultTiempo),
-													Fitness is (FitnessIncompleto + FitnessMejorado) * NuevoMultiplicador,
+													FitnessMejorado is (Recompensa + L1) * L2 * NuevoMultiplicador * NuevaProbabilidadAcumulada,
+													Fitness is FitnessIncompleto + FitnessMejorado,
 
 													!.
 
@@ -480,31 +300,12 @@ cruzaIndividuos(ElMejor,ElPeor,Hijo1,Hijo2,ProbabilidadDeCruzamiento):-
 													Aleatorio is Rand + 0,
 													ProbabilidadDeCruzamiento >= Aleatorio,
 													length(ElMejor,Largo), 
-													%Fin is Largo - 2,
-													Tamanio is Largo - 1,
-													Mitad is Tamanio / 2,
-													Half is floor(Mitad),
-													random_between(2,Half,PrimerPuntoDeCorte),
-													SegundoPuntoDeCorte is PrimerPuntoDeCorte + Half,
-													%write('PrimerPuntoDeCorte: '),
-													%write(PrimerPuntoDeCorte),
-													%nl,
-													%write('SegundoPuntoDeCorte: '),
-													%write(SegundoPuntoDeCorte),
-													%nl,
-													split_at(PrimerPuntoDeCorte,ElMejor,PrincipioDeElMejor,FinalDeElMejor),
-													split_at(Mitad,FinalDeElMejor,MitadDeElMejor,MeroFinalDeElMejor),
-													split_at(PrimerPuntoDeCorte,ElPeor,PrincipioDeElPeor,FinalDeElPeor),
-													split_at(Mitad,FinalDeElPeor,MitadDeElPeor,MeroFinalDeElPeor),
-													append(PrincipioDeElMejor,MitadDeElPeor,HijoIncompleto1),
-													append(HijoIncompleto1,MeroFinalDeElMejor,Hijo1),
-													append(PrincipioDeElPeor,MitadDeElMejor,HijoIncompleto2),
-													append(HijoIncompleto2,MeroFinalDeElPeor,Hijo2),
-													%random_between(2,Fin,PuntoDeCorte),
-													%split_at(PuntoDeCorte,ElMejor,PrincipioDeElMejor,FinalDeElMejor),
-													%split_at(PuntoDeCorte,ElPeor,PrincipioDeElPeor,FinalDeElPeor),
-													%append(PrincipioDeElMejor,FinalDeElPeor,Hijo1),
-													%append(PrincipioDeElPeor,FinalDeElMejor,Hijo2),
+													Fin is Largo - 2,
+													random_between(2,Fin,PuntoDeCorte),
+													split_at(PuntoDeCorte,ElMejor,PrincipioDeElMejor,FinalDeElMejor),
+													split_at(PuntoDeCorte,ElPeor,PrincipioDeElPeor,FinalDeElPeor),
+													append(PrincipioDeElMejor,FinalDeElPeor,Hijo1),
+													append(PrincipioDeElPeor,FinalDeElMejor,Hijo2),
 													!
 													;
 													Hijo1 = ElMejor,
@@ -512,46 +313,31 @@ cruzaIndividuos(ElMejor,ElPeor,Hijo1,Hijo2,ProbabilidadDeCruzamiento):-
 													!.
 
 %% Esto cambia algún gen de todos los individuos.
-mutaPoblacion([],ProbabilidadDeMutacion,NumeroDeAcciones,Tama,PoblacionMutada):-
+mutaPoblacion([],ProbabilidadDeMutacion,NumeroDeAcciones,PoblacionMutada):-
 													PoblacionMutada = [],
 													!.
-mutaPoblacion([ElPrimero|LosDemas],ProbabilidadDeMutacion,NumeroDeAcciones,Tama,PoblacionMutada):-
-													mutaPoblacion(LosDemas,ProbabilidadDeMutacion,NumeroDeAcciones,Tama,PoblacionMutadaIncompleta),
-													ElPrimero = [Cabeza|Cola],
-													mutaIndividuos(Cola,ProbabilidadDeMutacion,NumeroDeAcciones,Tama,ElPrimeroMutado),
-													append([Cabeza],ElPrimeroMutado,Gen),
-													append([Gen],PoblacionMutadaIncompleta,PoblacionMutada),
+mutaPoblacion([ElPrimero|LosDemas],ProbabilidadDeMutacion,NumeroDeAcciones,PoblacionMutada):-
+													mutaPoblacion(LosDemas,ProbabilidadDeMutacion,NumeroDeAcciones,PoblacionMutadaIncompleta),
+													mutaIndividuos(ElPrimero,ProbabilidadDeMutacion,NumeroDeAcciones,ElPrimeroMutado),
+													append([ElPrimeroMutado],PoblacionMutadaIncompleta,PoblacionMutada),
 													!.
 
-mutaIndividuos([],ProbabilidadDeMutacion,NumeroDeAcciones,Tama,GenomaMutado):-
-													GenomaMutado = [],
-													!.
-
-mutaIndividuos([GenAMutar|RestoDelosGenes],ProbabilidadDeMutacion,NumeroDeAcciones,Tama,GenomaMutado):-
+%% Esto Cambia algún gen de un individuo.
+mutaIndividuos(ElPrimero,ProbabilidadDeMutacion,NumeroDeAcciones,ElPrimeroMutado):-
 													random(Rand),
-                          							Aleatorio is Rand + 0,
-                          							ProbabilidadDeMutacion >= Aleatorio,
-                          							
-													Taman is 3 * Tama,
-													Tamani is Tama + 1,
-
-													random(Chanza),
-													((Chanza < 0.5)->
-														random_between(1,Taman,Aleatorio2)
-													;
-														random_between(Tamani,NumeroDeAcciones,Aleatorio2)
-													),
-
-                          							mutaIndividuos(RestoDelosGenes,ProbabilidadDeMutacion,NumeroDeAcciones,Tama,GenesMutados),
-                          							%write('GenAMutar: '),write(GenAMutar),write(', Aleatorio2: '),write(Aleatorio2),nl,
-
-                          							append([Aleatorio2],GenesMutados,GenomaMutado),
+													Aleatorio is Rand + 0,
+													ProbabilidadDeMutacion >= Aleatorio,
+													length(ElPrimero,Largo), 
+													Fin is Largo - 2,
+													random_between(0,Fin,PuntoDeCorte),
+													split_at(PuntoDeCorte,ElPrimero,PrincipioDeElPrimero,FinalDeElPrimero),
+													random_between(1,NumeroDeAcciones,Aleatorio),
+													FinalDeElPrimero = [ElQueVamosAReemplazar|LosQueVamosADejarEnPaz],
+													append(PrincipioDeElPrimero,[Aleatorio|LosQueVamosADejarEnPaz],ElPrimeroMutado),
 													!
 													;
-													mutaIndividuos(RestoDelosGenes,ProbabilidadDeMutacion,NumeroDeAcciones,Tama,GenesMutados),
-													append([GenAMutar],GenesMutados,GenomaMutado),	
-                          							!.
-
+													ElPrimero = ElPrimeroMutado,
+													!.
 
 % Regresa toda la actividad posible del robot
 regresaTodaLaActividad(AccionesIdeales,Y):-
