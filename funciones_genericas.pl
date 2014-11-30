@@ -1,9 +1,3 @@
-:- initialization(main).
-:- op(15, xfx, '=>').
-=>(X,Y).
-
-main:- consult('main.pl'),consult('consultas.pl').
-
 /* -- Funcion para leer estado de bd -- */
 rb(Y):- open_kb('bd.txt',Y).
 
@@ -32,6 +26,10 @@ eliminaClase(X,[X|T],T).
 eliminaClase(X,[H|T],[H|T1]):-
 	eliminaClase(X,T,T1).
 
+delete_all_ocurrences(X, [X|T], R):-delete_all_ocurrences(X, T, R). 
+delete_all_ocurrences(X, [H|T], [H|R]):-delete_all_ocurrences(X, T, R).
+delete_all_ocurrences(_, [], []).
+
 concatenar([],L,L).
 concatenar([X|L1],L2,[X|L3]):-concatenar(L1,L2,L3).
 
@@ -46,6 +44,18 @@ set([H|T],Out) :-
 	Cp= Y=>_,
     member(Cp,T),
     set(T,Out).
+
+fill([], _, 0).
+fill([X|Xs], X, N) :- N0 is N-1, fill(Xs, X, N0).
+
+findlen(Y,[],X):- X=0,!.    
+findlen(Y,[X|Tail],Count):-
+        (
+          X=[Y,_],
+          findlen(Y,Tail,Prev),
+          Count = Prev + 1
+        )
+        ;findlen(Y,Tail,Count).
 
 /*regresa una clase X , q busca en BD=[H|T], en P*/
 quieroClase(X,[H|T],P):-
@@ -70,7 +80,6 @@ quieroProbLugar(X,Y,P,Time, Reward):-
 	nth0(3,X,Mov),
 	member(movimiento=>Ls,Mov),
 	quieroProb(Y,Ls,P,Time, Reward).
-
 
 /*regresa la probabilidad P de realizar la accion X buscando en una lista de acciones q le pasas [H|T]*/
 quieroProbAccion(X,[H|T],P, Time, Reward):-
@@ -98,6 +107,58 @@ ubicar_objeto(Nm,Ub):-
 	member(ubicacion=>X,Rels),
 	Ub=X.
 
+probNreward_mover(Lugar,BD,Prob,Rew,Cost):-
+  ubicacion_actual(Ub,BD),
+  quieroLugar(Ub,BD,Uba),
+  quieroClase(Lugar,BD,Lu),
+  nth0(0,Lu,Nm),
+  segundoTermino(Nm,X), /*saco el id del lugar al q me voy a mover*/
+  quieroProbLugar(Uba,X,Prob,Cost,Rew).
+
+probNreward_grab(Objeto,BD,Prob,Rew,Cost):-
+  quieroClase(Objeto,BD,Obj),
+  quieroProbAccionObjeto(Obj,buscar, P1,T1, R1),
+  quieroProbAccionObjeto(Obj,agarrar, P2,T2, R2),
+  Prob is P1+P2, Rew is R1+R2, Cost is T1+T2.
+
+stuff_belongs_where(Stuff,Where,BD):-
+   quieroClase(Stuff,BD,StuffClass),
+   nth0(3,StuffClass,RelsStuff), member(ubicacion=>X,RelsStuff),
+   quieroLugar(X,BD,WhereClass),
+   nth0(2,WhereClass,PropsWhere),
+   member(nombre=>Y, PropsWhere),
+   Where = Y.
+
+place_has_stuff(X,ToF):-
+  rb(W),
+  quieroClase(X,W,Lugar),
+  extensionDeUnaClaseInicio(cosas,Y),
+  nth0(0,Lugar,Id),
+  segundoTermino(Id,IdLug),
+  place_has_stuff_(Y,IdLug,W,ToF1),
+  ToF = ToF1.
+
+place_has_stuff_([],Place,W,ToF):- ToF = false,!.
+place_has_stuff_([H|T],Place,W,ToF):-
+  quieroClase(H,W,Obj),
+  nth0(3,Obj,Rels),
+  member(ubicacion=>X,Rels),
+  (X == Place-> ToF = true,! ; 
+  place_has_stuff_(T,Place,W,ToF)).
+
+stuff_belongs(Obj,Lug,ToF):-
+  rb(W),
+  quieroClase(Obj,W,Objeto),
+  nth0(3,Objeto,Rels),
+  quieroClase(Lug,W,Lugar),
+  nth0(0,Lugar,IdL),
+  segundoTermino(IdL,IdLug),
+  member(ubicacion=>X,Rels),
+  (X == IdLug-> ToF = true,! ; ToF = false,! ).
+
+is_member(X,Y,T):-
+  ( member(X,Y) -> T=true ; T=false).
+
 /* estado de brazos actuales del robot*/
 brazos_robot(R,W):- 
 	extensionDeUnaClaseInicio(robot,Y),
@@ -105,12 +166,11 @@ brazos_robot(R,W):-
 	quieroClase(B1,W,Brazo1),quieroClase(B2,W,Brazo2),
 	nth0(3,Brazo1,Rb1),nth0(3,Brazo2,Rb2),
 	nth0(2,Brazo1,Nm1),nth0(2,Brazo2,Nm2),
+	nth0(0,Brazo1,Id1),nth0(0,Brazo2,Id2),
+	segundoTermino(Id1,Id1_),segundoTermino(Id2,Id2_),
 	member(nombre=>X1,Nm1), member(nombre=>X2, Nm2),
-	length(Rb1,N1),length(Rb2,N2),
-	( 	(N1 == 0 ),R = X1; (N2 == 0),R = X2
-	); R=false
-	.
-
+	member(agarro=>N1,Rb1),member(agarro=>N2,Rb1),
+	( 	( N1 == Id1_ ),R = X1; ( N2 == Id2_ ),R = X2) ; R=false.
 
 /* estado de brazos actuales del robot*/
 brazos_robot_actual(Obj,Brazo,W):-
@@ -124,13 +184,13 @@ brazos_robot_actual(Obj,Brazo,W):-
 		dif(N2,0), member(agarro=>Obj,Rb2), member(nombre=>X1,Nm2), Brazo = X1 ;
 		Brazo = false
 	);
-	Brazo = false .
-
+	Brazo = false.
 
 /*agarrar objeto O, colocarlo en brazo X y, recibo BD actual en W, regreso la base modificada en BD*/
 agarrar_objeto(O,X,W,BD):-
 	modificaRelacion(ubicacion, O, X,W, BD1),
 	anadeRelacion(X,[agarro=>O],BD1,BD).
+
 
 /*-------------------------------Funciones del robot-----------------------------------------*/
 

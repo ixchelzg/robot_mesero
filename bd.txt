@@ -9,13 +9,13 @@
 		id=>o2,
 		id_padre=>c1,
 		[nombre=>brazoIzquierdo],
-		[]
+		[agarro=>o2]
 	],
 	[
 		id=>o3,
 		id_padre=>c1,
 		[nombre=>brazoDerecho],
-		[]
+		[agarro=>o3]
 	],
 	[
 		id=>c4,
