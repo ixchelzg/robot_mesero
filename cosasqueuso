@@ -39,9 +39,16 @@
 
 
 
+?- clean_plan( [[mover,estante1],[grab,hamburguesa],[mover,estante2],[grab,agua],[mover,mesa1],[colocar,hamburguesa],[mover,mesa1],[colocar,agua]], 
 
  cd('/home/ixchel/git/UNAM/IA/Busqueda/').
  consult('a_star.pl').
 rb(W), start_plan([[hamburguesa,mesa1],[agua,mesa2]],W,CT,80,R,PLAN).
 
 [[mover,mesa3],[colocar,refresco],[grab,agua],[mover,mesa2],[colocar,agua],[mover,mesa1],[colocar,hamburguesa]]
+
+
+statistics(walltime, [TimeSinceStart | [TimeSinceLastCall]]),
+   some_heavy_operation,
+   statistics(walltime, [NewTimeSinceStart | [ExecutionTime]]),
+   write('Execution took '), write(ExecutionTime), write(' ms.'), nl.

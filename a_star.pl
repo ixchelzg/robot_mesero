@@ -42,6 +42,28 @@ clean_([H|T],L):-
   clean_(L1,L2),
   append([H],L2,L),!.
 
+% clean_plan(ThePlan__,Reward__,MeanestPlan,MeanestReward),
+clean_plan([],[],[],MeanestPlan,MeanestReward,MeanestTime):- MeanestReward=[],MeanestTime=[], MeanestPlan=[],!.
+clean_plan([H|T],[H1|T1],[H2|T2],MeanestPlan,MeanestReward,MeanestTime):-
+  length(T,Len),
+  ( (Len>=2)-> 
+    (nth0(1,T,MH),
+    ((MH == H)-> 
+      ( delete_one(H,T,L1),
+        nth0(1,T1,MH1),nth0(1,T2,MH2),
+        delete_one(MH1,T1,L11), delete_one(MH2,T2,L12),
+        Cola1 = L1, Cola2 = L11, Cola3 = L12 );
+      ( Cola1 = T, Cola2 = T1,Cola3 = T2 )
+    ),
+    clean_plan(Cola1,Cola2,Cola3,MeanestPlan1,MeanestR,MeanestT),
+    append([H],MeanestPlan1,MeanestPlan),append([H2],MeanestT,MeanestTime),
+    append([H1],MeanestR,MeanestReward),!)
+    ;
+    (clean_plan(T,T1,T2,MeanestPlan1,MeanestR,MeanestT),
+    append([H],MeanestPlan1,MeanestPlan),append([H2],MeanestT,MeanestTime),
+    append([H1],MeanestR,MeanestReward),!)
+  ).
+
 start_plan(L,W,CTime,Time,Reward,ThePlan):-
   allnodes(L,W,Plan),
   clean_(Plan,CleanPlan),
@@ -64,13 +86,16 @@ start_plan(L,W,CTime,Time,Reward,ThePlan):-
   append([[BestCandidate]|[ThePlan_]],ThePlan__),
   append([Heu],Rewards,Reward__),
   append([BestTime],ALLTIMES,ALLTIMES1),
-  sumlist(ALLTIMES1,ATimes),
-  ( (ATimes > Time)-> reverse(ALLTIMES,ListAT), deleterange(ListAT,Time,NewListTimes); reverse(ALLTIMES,NewListTimes) ),
+  clean_plan(ThePlan__,Reward__,ALLTIMES1,MeanestPlan,MeanestReward,MeanestTime),
+  sumlist(MeanestTime,ATimes),
+  ( (ATimes > Time)-> reverse(MeanestTime,ListAT), deleterange(ListAT,Time,NewListTimes); reverse(MeanestTime,NewListTimes) ),
   length(NewListTimes,LENNLT),
-  slice(ThePlan__,1,LENNLT,ThePlan),
-  slice(Reward__,1,LENNLT,Reward),
+  slice(MeanestPlan,1,LENNLT,ThePlan),
+  slice(MeanestReward,1,LENNLT,Reward),
   sumlist(Reward,Rewardss),
+  write(' FIRST OPT :: '), write(ThePlan__),nl,
   write('BESTPLAN :: '), write(ThePlan),nl,
+  write(' Rewardsss :: '), write(Reward__),nl,
   write(' Reward :: '), write(Rewardss),nl,!.
 
 deleterange([],Time,L) :- L=[],!.
@@ -115,7 +140,7 @@ expand(AllTheNodes,AllNodes,Current,CTime,Time,Heuristic,NewCandidate,NodesLeft,
           last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT), last(NewstBD,NewNewBD)
     )
   ),
-  write('Candidatos para la siguiente accion : : : : : : : : : '),write(Candidates),nl,nl,
+  %write('Candidatos para la siguiente accion : : : : : : : : : '),write(Candidates),nl,nl,
   delete_one(LBC,AllNodes,NodesLeft),
   ( NewNewBD == false-> NewBD = BD ; NewBD = NewNewBD),
   NewCandidate = LBC, CTime = LBT, Heuristic = LBH,!.
@@ -208,6 +233,11 @@ find_all_mover(Place,[H|T],PosArray):-
 % debo checar si moverme a una mesa tiene sentido, con respecto a lo q estoy agarrarndo %
 makes_sense_to_move(Place,AllTheNodes,DB,NoY):-
   nextto([mover,Place],[XXX,YYY],AllTheNodes),
+  %ubicacion_actual(Ub,DB),
+  %quieroLugar(Ub,DB,Lug),
+  %nth0(2,Lug,Props),
+  %member(nombre=>L_,Props),
+  %( (L_ == Place)->  NoY = false,! ; true ),
   brazos_robot_agarrando(Cosa1,Cosa2,DB),
   ( XXX == colocar -> 
       is_this_nextto(AllTheNodes,Cosa1,Place,Test1),is_this_nextto(AllTheNodes,Cosa2,Place,Test2),
@@ -284,7 +314,7 @@ candidate(AllTheNodes,[H|T],CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD):-
                 (
                  
                   makes_sense_to_move(OoL,AllTheNodes,BD,NoY), 
-                  ( (NoY == true)-> mover(OoL,NewBD1,BD) ; NewBD1 = false)
+                  ( (NoY == true)-> mover(OoL,NewBD1,BD) ; NewBD1 = false )
                 )
                 ; 
                 ( 
@@ -295,7 +325,7 @@ candidate(AllTheNodes,[H|T],CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD):-
             ( NewBD1 == false -> 
               ( candidate(AllTheNodes,T,CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD))
               ; 
-              ( write('este candidato aplica para la siguiente accion ... '), write(H),nl,nl,
+              (
                 candidate(AllTheNodes,T,NT,Time,Heu2,Heu1,BestCandidate1,BD,NewstBD),
                 append([NewBD1],NewstBD,NewBD),
                 append([Cost],NT,CTime),

@@ -77,6 +77,7 @@ quieroLugar(X,[H|T],P):-
 		P=H ; quieroLugar(X,T,P).
 
 /*regresa la probabilidad P de moverse a un lugar, hacia lugar X, buscando en una lista de lugares [H|T]*/
+quieroProb(X,[],P,Time,Reward).
 quieroProb(X,[H|T],P, Time, Reward):-
 	member(lugar=>X,H), member(probabilidad=>Pr,H), member(costo=>Tm,H), member(recompensa=>Rw,H) ->
 		P=Pr, Time=Tm,  Reward = Rw; quieroProb(X,T,P,Time, Reward).
