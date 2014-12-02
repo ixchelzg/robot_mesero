@@ -235,13 +235,14 @@ mover(L, BD, OldTime,Time,OldReward, Reward,W):-
 buscar(O,P, OldTime,Time, OldReward, Reward,W):-
 	quieroClase(O,W,Obj),
 	ubicacion_actual(Ub,W),
+	write(Ub),nl,
 	ubicar_objeto(O,Ub),
+	write(Ub),nl,
 	quieroProbAccionObjeto(Obj,buscar, Pro,Tm, Rw),
 	Time is OldTime+Tm,
 	accion_realizada(Pro,T),
 	(
-	T==true,(P=true, Reward is OldReward+Rw); 
-	T==false,(P=false, Reward is OldReward)
+	T==true->(P=true, Reward is OldReward+Rw);(P=false, Reward is OldReward)
 	);
 	write('no pude buscar, en este lugar no hay nada'),nl, P = false, Reward is OldReward, Time is 0.
 
@@ -292,7 +293,8 @@ ejecutar([H],StartTime,Time,Reward,KW,RealDB):-
 	write('se nos acabo el tiempo!'),nl,!
 	;
 	(Accion == buscar),
-		buscar(CoL,P,StartTime,NT,Reward,NR,KW), NewTime is Time-NT, LeTime is NT-StartTime,
+		( (var(RealDB))-> DataBase = KW ; DataBase = RealDB ),
+		buscar(CoL,P,StartTime,NT,Reward,NR,DataBase), NewTime is Time-NT, LeTime is NT-StartTime,
 		write('Empezo en: '),write(StartTime),write(' y le tomo en buscar: '),write(LeTime),nl,
 		write('Tiempo que queda: '),write(NewTime),nl,write('Recompensa:'),write(NR),nl,
 		( 
@@ -338,7 +340,8 @@ ejecutar([H|T],StartTime,Time,Reward,KW,RealDB):-
 	write('se nos acabo el tiempo!'),nl,!
 	;
 	(Accion == buscar),
-		buscar(CoL,P,StartTime,NT,Reward,NR,KW), NewTime is Time-NT,LeTime is NT-StartTime,
+		( (var(RealDB))-> DataBase = KW ; DataBase = RealDB ),
+		buscar(CoL,P,StartTime,NT,Reward,NR,DataBase), NewTime is Time-NT,LeTime is NT-StartTime,
 		write('Empezo en:'),write(StartTime),write(' y le tomo en buscar:'),write(LeTime),nl,
 		write('Tiempo que queda: '),write(NewTime),nl,write('Recompensa: '),write(NR),nl,
 		( 
