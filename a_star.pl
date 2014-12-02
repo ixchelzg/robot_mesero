@@ -25,116 +25,140 @@ allnodes([H|T],W,L):-
   member(nombre=>UbName,PropsUbObj),
   NewList = [ [mover,UbName],[grab,Objeto],[mover,Destino],[colocar,Objeto] ],
   allnodes(T,W,NewList1),
-  append(NewList1,NewList,L).
+  append(NewList1,NewList,L),!.
+
+
+stufflist([],L):- L=[],!.
+stufflist([H|T],L):-
+  nth0(0,H,Objeto),
+  nth0(1,H,Destino),
+  stufflist(T,NewList1),
+  append([Objeto],NewList1,L),!.
 
 clean_([],L):- L=[],!.
 clean_([H|T],L):-
+  H=[X,Y],
   delete_all_ocurrences(H,T,L1),
   clean_(L1,L2),
-  append([H],L2,L).
+  append([H],L2,L),!.
 
 start_plan(L,W,CTime,Time,Reward,ThePlan):-
   allnodes(L,W,Plan),
-  write(Plan),nl,
   clean_(Plan,CleanPlan),
-  write(CleanPlan),nl,
-  length(CleanPlan,Len),
+  length(Plan,Len),
   Len1 is Len-1,
   fill(List,a,Len1),
   find_best_first(CleanPlan, Bests),
-  write('Bests >>>'),nl,write(Bests),nl,
-  candidate(Bests, CTimes, Time, Heus,OldHeu, BestCandidates, W),
+  stufflist(L,StuffList),
+  find_best_first_(Bests,BestCandidates,Heus,OldReward,CTimes,StuffList,W),
   last(BestCandidates,BestCandidate), last(Heus,Heu), last(CTimes,BestTime),
-  write('BestCandidate  ... '), write(BestCandidate),nl,
-  write(List),nl,
-  delete(CleanPlan,BestCandidate,CleanPlan_),
-  write('CleanPlan_ >'),write(CleanPlan_),nl,
-  write('CleanPlan >'),write(CleanPlan),nl,
-  planned_(List,CleanPlan_,NodesLeft,ThePlan_,BestCandidate,Current1,Rewards, CTime_, Time,W),
+  BestCandidate = [XXX,YYY],
+  ( (XXX == mover)-> mover(YYY,DataBase,W) ; DataBase = W ),
+  %, (DataBase1 == false-> DataBase=W ; DataBase=DataBase1)%
+  %write(' -- >>> DataBase  ... '),nl,nl, write(DataBase),nl,nl,nl,
+  delete_one(BestCandidate,Plan,CleanPlan_),
+  delete_one(BestCandidate,CleanPlan,CleanPlan_1),
+  planned_(List,CleanPlan_,CleanPlan_,NodesLeft,ThePlan_,BestCandidate,Current1,Rewards, CTime_,  ALLTIMES, Time,DataBase,NewBD),
   %expand(CleanPlan_,BestCandidate,LastTime,Time,Heuristic,NewCandidate,W),
-  append([[BestCandidate]|[ThePlan_]],ThePlan),
-  append([Heu],Rewards,Reward),
-  CTime is CTime_+BestTime,
+  %CTime__ is CTime_+BestTime,  
+  append([[BestCandidate]|[ThePlan_]],ThePlan__),
+  append([Heu],Rewards,Reward__),
+  append([BestTime],ALLTIMES,ALLTIMES1),
+  sumlist(ALLTIMES1,ATimes),
+  ( (ATimes > Time)-> reverse(ALLTIMES,ListAT), deleterange(ListAT,Time,NewListTimes); reverse(ALLTIMES,NewListTimes) ),
+  length(NewListTimes,LENNLT),
+  slice(ThePlan__,1,LENNLT,ThePlan),
+  slice(Reward__,1,LENNLT,Reward),
+  sumlist(Reward,Rewardss),
   write('BESTPLAN :: '), write(ThePlan),nl,
-  write(' ----- :: '), write(CTimes),nl,
-  write(' EL TIEMPO INIT :: '), write(BestTime),nl,
-  write(' ----- :: '), write(Reward),nl,!.
+  write(' Reward :: '), write(Rewardss),nl,!.
 
-planned_([], AllNodes, NodesLeft, Plan, Current, Current1, Heuristics, TimeLeft, Time,BD):- Plan = [],Heuristics=[], TimeLeft=0,!.
-planned_([H|T],AllNodes, NodesLeft, Plan, Current, Current1, Heuristics,TimeLeft, Time,BD):-
-  write('me meto o nel '),nl,
-  write('NodesLeft : '),write(NodesLeft),nl,
+deleterange([],Time,L) :- L=[],!.
+deleterange([H|T],Time,L) :- sumlist([H|T],X), X > Time, deleterange(T,Time,L).
+deleterange([H|T],Time,L) :- sumlist([H|T],X), X =< Time, deleterange(T,Time,D), L=[H|D].
+
+planned_([], AllNodesEv, AllNodes, NodesLeft, Plan, Current, Current1, Heuristics, TimeLeft, ALLTIMES, Time,BD,NewBD):- write('done planning .. '),Plan=[],Heuristics=[],ALLTIMES=[],!.
+planned_([H|T],AllNodesEv, AllNodes, NodesLeft, Plan, Current, Current1, Heuristics,TimeLeft,  ALLTIMES, Time,BD,NewBD):-
   ( var(NodesLeft)-> LosNodos = AllNodes ; LosNodos = NodesLeft ),
+  ( var(NewBD)-> DataBase = BD ; DataBase = NewBD ),
   ( var(Current1) -> 
-    write(' cur 1 var '),nl,expand(LosNodos,Current, LastTime, Time, Heuristic, NewCandidate,NL1,BD) ; 
-    write(' cur 1 no var '),nl,write('::'),write(Current1),nl,expand(LosNodos,Current1, LastTime, Time, Heuristic, NewCandidate,NL1,BD)
+    expand(AllNodesEv,LosNodos,Current, LastTime, Time, Heuristic, NewCandidate,NL1,DataBase,NewBD1) ; 
+    expand(AllNodesEv,LosNodos,Current1, LastTime, Time, Heuristic, NewCandidate,NL1,DataBase,NewBD1)
   ),
-  write('  [Current] :: '),write(Current),nl,
-  write('  [Current1] :: '),write(Current1),nl,
-  write('  [LastTime] :: '),write(LastTime),nl,  
   Current12 = NewCandidate, 
-  write(' >> [Current1] :: '),write(Current12),nl,
-
-  write('  [NewCandidate] :: '),write(NewCandidate),nl,
-  planned_( T, AllNodes, NL1, Plan1,Current, Current12,Heuristics1, TimeLeft1,Time,BD ),
-  TimeLeft is TimeLeft1+LastTime,
+  planned_( T, AllNodesEv,AllNodes, NL1, Plan1,Current, Current12,Heuristics1, TimeLeft1,  ALLTIMES1,Time,BD,NewBD1),
+  %TimeLeft is TimeLeft1+LastTime,
+  append([LastTime],ALLTIMES1,ALLTIMES),
   append([NewCandidate],Plan1,Plan),
-  append([Heuristic],Heuristics1,Heuristics).
+  append([Heuristic],Heuristics1,Heuristics),!.
 
-expand(AllNodes,Current,CTime,Time,Heuristic,NewCandidate,NodesLeft,BD):-
+expand(AllTheNodes,AllNodes,Current,CTime,Time,Heuristic,NewCandidate,NodesLeft,BD,NewBD):-
   nth0(0,Current,Accion), nth0(1,Current,OoL),
-  write(Accion),nl,write(OoL),nl,
-  write('AllNodes inside EXPAND PREDICATE -- :: '),nl,write(AllNodes),nl,
   (
     ( 
       Accion == mover, place_has_stuff(OoL,ToF), 
       ( (ToF == true)-> 
-          find_all_mover(OoL,AllNodes,Candidates), candidate(Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD),
-          last(BestCandidate,LBC), last(Heus,LBH), last(CTimes,LBT)
+          find_all_mover(OoL,AllNodes,Candidates), candidate(AllTheNodes,Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD,NewstBD),
+          last(BestCandidate,LBC), last(Heus,LBH), last(CTimes,LBT), last(NewstBD,NewNewBD)
           ;
-          find_all_mover_col(AllNodes,OoL,AllNodes,Candidates), candidate(Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD),
-          last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT)
+          find_all_mover_col(AllTheNodes,OoL,AllNodes,Candidates), candidate(AllTheNodes,Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD,NewstBD),
+          last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT), last(NewstBD,NewNewBD)
       )
     );
     (
-      Accion == grab,
-      findlen(grab,AllNodes,Y),
-      find_all_grab(OoL,AllNodes,Candidates,BD,Y), candidate(Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD),
-      write(Candidates),nl,
-      last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT)
+      Accion == grab, 
+      find_all_grab(OoL,AllNodes,Candidates,BD),candidate(AllTheNodes,Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD,NewstBD),
+      last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT), last(NewstBD,NewNewBD)
     );
     (
-      Accion == colocar, find_all_colocar(OoL,AllNodes,Candidates), candidate(Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD),
-          last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT)
+      Accion == colocar, find_all_colocar(OoL,AllNodes,Candidates),candidate(AllTheNodes,Candidates,CTimes,Time,Heus,OldHeu,BestCandidate,BD,NewstBD),
+          last(BestCandidate,LBC), last(Heus,LBH),last(CTimes,LBT), last(NewstBD,NewNewBD)
     )
   ),
-  write(LBC),nl,write(LBT),nl, 
-  NewCandidate = LBC, CTime = LBT, Heuristic = LBH,
-  delete(AllNodes,LBC,NodesLeft),!.
+  write('Candidatos para la siguiente accion : : : : : : : : : '),write(Candidates),nl,nl,
+  delete_one(LBC,AllNodes,NodesLeft),
+  ( NewNewBD == false-> NewBD = BD ; NewBD = NewNewBD),
+  NewCandidate = LBC, CTime = LBT, Heuristic = LBH,!.
 
 find_all_colocar(Obj,[],PosArray):- PosArray = [],!.
 find_all_colocar(Obj,[H|T],PosArray):-
   (
-    ( H = [mover,X],
-      place_has_stuff(X,Test),
-      ((Test == true)->  find_all_colocar(Obj,T,PosArray) ; find_all_colocar(Obj,T,PosArray1),append([H],PosArray1,PosArray) )
+    (
+      H = [mover,X], find_all_colocar(Obj,T,PosArray1),append([H],PosArray1,PosArray),! 
     )
     ;
     ( find_all_colocar(Obj,T,PosArray) )
   ).
 
-find_all_grab(Obj,[],PosArray,BD,Number):- PosArray = [],!.
-find_all_grab(Obj,[H|T],PosArray,BD,Number):-
-  ( H = [mover,X], find_all_grab(Obj,T,PosArray1,BD,Number),append([H],PosArray1,PosArray) )
-  ;
-  ( H = [grab,X],
-    stuff_belongs_where(Obj,Place1,BD),
-    stuff_belongs_where(X,Place2,BD),
-    ( ( Place1 == Place2,dif(Obj,X),Number > 0 )-> find_all_grab(Obj,T,PosArray1,BD,Number),append([H],PosArray1,PosArray) ; find_all_grab(Obj,T,PosArray,BD,Number) )
-  )
-  ;
+find_all_grab(Obj,[],PosArray,BD):- PosArray = [],!.
+find_all_grab(Obj,[H|T],PosArray,BD):-
   (
-    find_all_grab(Obj,T,PosArray,BD,Number)
+    ( 
+      H = [mover,X], 
+      find_all_grab(Obj,T,PosArray1,BD),append([H],PosArray1,PosArray),!
+    )
+    ;
+    ( H = [grab,X],
+      brazos_robot(R,BD),
+      ( (R == false)->
+          (
+            find_all_grab(Obj,T,PosArray,BD)
+          )
+          ;
+          ( stuff_belongs_where(Obj,Place1,BD),
+            stuff_belongs_where(X,Place2,BD),
+            ( 
+              (Place1 == Place2, dif(Obj,X) )-> 
+              find_all_grab(Obj,T,PosArray1,BD),append([H],PosArray1,PosArray),! ; 
+              find_all_grab(Obj,T,PosArray,BD) 
+            )
+          )
+      )
+    )
+    ;
+    (
+      find_all_grab(Obj,T,PosArray,BD)
+    )
   ).
 
 find_best_first([],Bests):- Bests=[],!.
@@ -144,7 +168,7 @@ find_best_first([H|T],Bests):-
   ( 
     ( Test == true)-> 
       (
-        find_best_first(T,Bests1), append([H],Bests1,Bests) 
+        find_best_first(T,Bests1), append([H],Bests1,Bests),!
       )
       ;
       (
@@ -154,6 +178,7 @@ find_best_first([H|T],Bests):-
   ;
   find_best_first(T,Bests).
 
+
 find_all_mover(Place,[],PosArray):- PosArray = [],!.
 find_all_mover(Place,[H|T],PosArray):-
   (
@@ -161,7 +186,7 @@ find_all_mover(Place,[H|T],PosArray):-
       H = [grab,X],
       stuff_belongs(X,Place,Test),
       ( 
-        (Test == true ) ->  find_all_mover(Place,T,PosArray1),append([H],PosArray1,PosArray) ; find_all_mover(Place,T,PosArray)
+        (Test == true ) ->  find_all_mover(Place,T,PosArray1),append([H],PosArray1,PosArray),! ; find_all_mover(Place,T,PosArray)
       )
     )
     ;
@@ -169,7 +194,7 @@ find_all_mover(Place,[H|T],PosArray):-
       H = [colocar,X],
       place_has_stuff(Place,Test),
       ( 
-        (Test == true ) -> find_all_mover(Place,T,PosArray) ; find_all_mover(Place,T,PosArray1),append([H],PosArray1,PosArray) 
+        (Test == true ) -> find_all_mover(Place,T,PosArray) ; find_all_mover(Place,T,PosArray1),append([H],PosArray1,PosArray),! 
       )
     )
     ;
@@ -178,33 +203,62 @@ find_all_mover(Place,[H|T],PosArray):-
     )
   ).
 
+% tiene sentido elegir esta accion de moverme , le paso el lugar al q me quiero mover %
+% y si no estoy agarrarndo nada, no importa, si me puedo mover, pero si estoy agarrando algo, %
+% debo checar si moverme a una mesa tiene sentido, con respecto a lo q estoy agarrarndo %
+makes_sense_to_move(Place,AllTheNodes,DB,NoY):-
+  nextto([mover,Place],[XXX,YYY],AllTheNodes),
+  brazos_robot_agarrando(Cosa1,Cosa2,DB),
+  ( XXX == colocar -> 
+      is_this_nextto(AllTheNodes,Cosa1,Place,Test1),is_this_nextto(AllTheNodes,Cosa2,Place,Test2),
+      (( Test1 == true )-> NoY = true,! ; ( ( Test2 == true ) -> NoY = true,! ; NoY = false,! ) )
+      ;
+      ( (Cosa1 == false)-> NoY = true,!; ( (Cosa2 == false)-> NoY = true,! ; NoY = false,! ) )
+  ).
+
+is_this_nextto(Nodes,Cosa,Place,Test):-
+  nextto([mover,Place],[colocar,Cosa],Nodes)->
+    Test = true; Test = false.
+
+/* estado de brazos actuales del robot*/
+brazos_robot_agarrando(Cosa1,Cosa2,W):- 
+  extensionDeUnaClaseInicio(robot,Y),
+  nth0(0,Y,B1),nth0(1,Y,B2),
+  quieroClase(B1,W,Brazo1),quieroClase(B2,W,Brazo2),
+  nth0(3,Brazo1,Rb1),nth0(3,Brazo2,Rb2),
+  nth0(2,Brazo1,Nm1),nth0(2,Brazo2,Nm2),
+  nth0(0,Brazo1,Id1),nth0(0,Brazo2,Id2),
+  segundoTermino(Id1,Id1_),segundoTermino(Id2,Id2_),
+  member(nombre=>X1,Nm1), member(nombre=>X2, Nm2),
+  member(agarro=>N1,Rb1),member(agarro=>N2,Rb2),
+  (( N1 == Id1_ )->  Cosa1 = false ; quieroLugar(N1,W,Cosa), nth0(2,Cosa,Props), member(nombre=>CosaNm,Props), Cosa1 = CosaNm),
+  (( N2 == Id2_ )-> Cosa2 = false,! ; quieroLugar(N2,W,Cosa_), nth0(2,Cosa_,Props_), member(nombre=>CosaNm_,Props_), Cosa2 = CosaNm_,!). 
+
 find_all_mover_col(AllNodes,Place,[],PosArray):- PosArray = [],!.
 find_all_mover_col(AllNodes,Place,[H|T],PosArray):-
   (
     ( H = [colocar,X] )->
     (
-      write(X),nl,nl,
       ( 
         nextto([mover,Place],H,AllNodes) ->  
-          ( find_all_mover_col(AllNodes,Place,T,PosArray1),append([H],PosArray1,PosArray) )
+          ( find_all_mover_col(AllNodes,Place,T,PosArray1),append([H],PosArray1,PosArray),! )
           ; 
           ( nextto([mover,NewPlace],H,AllNodes) ->
              find_all_mover_col(AllNodes,Place,T,PosArray) ; 
-             find_all_mover_col(AllNodes,Place,T,PosArray1),append([H],PosArray1,PosArray)
+             find_all_mover_col(AllNodes,Place,T,PosArray1),append([H],PosArray1,PosArray),!
           )
       )
     )
     ;
     ( 
-      write('no colocar'),nl,nl,
       find_all_mover_col(AllNodes,Place,T,PosArray)
     )
   ).
 
 %find the best next candidate !! 
 % encuentra al mejor candidato de una lista
-candidate([],CTime,Time,Heu,OldHeu,BestCandidate,BD):- BestCandidate = [], Heu = [], CTime = [],!.
-candidate([H|T],CTime,Time,Heu,OldHeu,BestCandidate,BD):- 
+candidate(AllTheNodes,[],CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD):- BestCandidate = [], Heu = [], CTime = [], NewBD = [],!.
+candidate(AllTheNodes,[H|T],CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD):- 
       nth0(0,H,Accion), nth0(1,H,OoL),
       (
         ( 
@@ -220,20 +274,114 @@ candidate([H|T],CTime,Time,Heu,OldHeu,BestCandidate,BD):-
       ,
       (
         ( 
-          write(Heu),nl,nl,
           ( var(OldHeu) ) -> ThisHeu is 0 ; ThisHeu is OldHeu ),
-         write(Prob),write(Rew),write(Cost),nl,nl,
-        write(ThisHeu),nl,nl,write(Heu1),nl,nl,
-        (ThisHeu < Heu1)-> 
-          ( %NT is CTime+Cost,
-            candidate(T,NT,Time,Heu2,Heu1,BestCandidate1,BD),
-            append([Cost],NT,CTime),
-            append([Heu1],Heu2,Heu),
-            append([H],BestCandidate1,BestCandidate) 
+          ((ThisHeu < Heu1)-> 
+          ( 
+            ( (Accion == grab)-> 
+              ( agarrar(OoL,NewBD1,BD) )
+              ; 
+              ( (Accion == mover)-> 
+                (
+                 
+                  makes_sense_to_move(OoL,AllTheNodes,BD,NoY), 
+                  ( (NoY == true)-> mover(OoL,NewBD1,BD) ; NewBD1 = false)
+                )
+                ; 
+                ( 
+                  (Accion == colocar)-> colocar(OoL,NewBD1,BD);  NewBD1 = false 
+                ) 
+              )
+            ),
+            ( NewBD1 == false -> 
+              ( candidate(AllTheNodes,T,CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD))
+              ; 
+              ( write('este candidato aplica para la siguiente accion ... '), write(H),nl,nl,
+                candidate(AllTheNodes,T,NT,Time,Heu2,Heu1,BestCandidate1,BD,NewstBD),
+                append([NewBD1],NewstBD,NewBD),
+                append([Cost],NT,CTime),
+                append([Heu1],Heu2,Heu),
+                append([H],BestCandidate1,BestCandidate),!
+              )
+            )
           )
           ;
-          ( candidate(T,CTime,Time,Heu,OldHeu,BestCandidate,BD) )
+          ( candidate(AllTheNodes,T,CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD) ))
       ).
 
+find_best_first_([],TheBest,Reward,OldReward,CTIMEs,StuffList,BD):- TheBest=[],Reward=[],!.
+find_best_first_([H|T],TheBest,Reward,OldReward,CTIMEs,StuffList,BD):-
+  nth0(0,H,Accion), nth0(1,H,OoL),
+  probNreward_mover_first(OoL,StuffList,Reward_,_,BD),
+  last(Reward_,Reward1),
+  quieroClase(inicio,BD,Inicio),
+  quieroClase(OoL,BD,Lug1),
+  nth0(0,Lug1,IdLug1_),
+  segundoTermino(IdLug1_,IdLug1),
+  quieroProbLugar(Inicio,IdLug1,Pro,Time,Rew),
+  ( (var(OldReward)) -> ThisR is 0 ; ThisR is OldReward ),
+  ( (ThisR < Reward1)->
+      (
+        find_best_first_(T,Best_,Reward__,Reward1,CTIMEs1,StuffList,BD),
+        append([H],Best_,TheBest),
+        append([Time],CTIMEs1,CTIMEs),
+        append([Reward1],Reward__,Reward),!
+      )
+      ;
+      (
+        find_best_first_(T,TheBest,Reward,OldReward,CTIMEs,StuffList,BD)
+      )
+  ).
+
+probNreward_mover_first(Lugar,[],Reward,OldReward,BD):- Reward=[],!.
+probNreward_mover_first(Lugar,[H|T],Reward,OldReward,BD):-
+  stuff_belongs(H,Lugar,Test),
+  ((Test == false)-> 
+    probNreward_mover_first(Lugar,T,Reward,OldReward,BD) ; 
+    (
+      (( var(OldReward) ) -> ThisR is 0 ; ThisR is OldReward ),
+      probNreward_grab(H,BD,Prob,Rew,Cost),heuristic(Prob,Rew,Cost,Heu),
+      (( Heu > ThisR)-> 
+          probNreward_mover_first(Lugar,T,Reward_,Heu,BD),
+          append([Heu],Reward_,Reward),! 
+          ;
+          probNreward_mover_first(Lugar,T,Reward,OldReward,BD)         
+      )
+    )
+  ).
+
+
 heuristic(Prob,Rew,Cost,Heu):-
-  ( dif(Rew,0.0) ) ->  Heu is Prob*Rew ; Heu is Prob*100 .
+  ( dif(Rew,0.0) ) ->  Heu is (Prob*(Rew-Cost)) ; Heu is (Prob*(100-Cost)) .
+
+/* Para mover al robot al lugar L, BD=New database, Time=Tiempo q lleva */
+mover(L, BD,W):-
+  quieroClase(L,W,Lu),
+  nth0(0,Lu,Nm),
+  segundoTermino(Nm,X),
+  modificaPropiedad(ubicacion, robot, X,W, BD),!; BD= false,!.
+
+/*colocar el objeto O en la mano libre del robot, si es q la tiene, BD modificada si realizo la accion. */
+agarrar(O, BD,W):-
+  ubicacion_actual(Ub,W), 
+  ubicar_objeto(O,Ub),
+  quieroClase(O,W,Obj),
+  brazos_robot(R,W),
+  dif(R,false),
+  modificaRelacion(agarro,R,O,W,BD),!
+  ;
+  BD= false,!.
+
+
+/*colocar el objeto O en el lugar en el que esta el robot, BD modificada si realizo la accion. */
+colocar(O, BD, W):-
+  quieroClase(O,W,Obj),
+  nth0(0,Obj,IDO),
+  segundoTermino(IDO,Y),
+  brazos_robot_actual(Y,Bra,W),
+  dif(Bra,false),
+  ubicacion_actual(Ub,W),
+  quieroLugar(Ub,W,Lug),
+  nth0(2,Lug,Props),
+  member(nombre=>L,Props),
+  modificaRelacion(agarro,Bra,Bra,W,BD),!;
+  BD = false,!.

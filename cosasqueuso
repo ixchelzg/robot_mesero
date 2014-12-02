@@ -1,0 +1,47 @@
+ ( var(RealDB)-> DataBase = BD ; DataBase = RealDB ),
+  (
+    var(Current1) -> 
+    (
+      Current=[Act1,Objt1],
+      ( (Act1 == mover)-> 
+        mover(Objt1, BDM1, 0,MovingTime1,0, Rewrd1,DataBase) ; 
+        ( (Act1 == grab)-> agarrar(Objt1, BDM1, 0,MovingTime1,0, Rewrd1,DataBase)  ; BDM1 = BD) 
+      ),
+      write(' cur 1 no var '),nl,expand(LosNodos,Current, LastTime, Time, Heuristic, NewCandidate,NL1,BDM1)
+    )
+    ;
+    (
+      Current1=[Act1,Objt1],
+      ( (Act1 == mover)-> 
+        mover(Objt1, BDM1,DataBase) ; 
+        ( (Act1 == grab)-> agarrar(Objt1, BDM1,DataBase)  ; BDM1 = BD) 
+      ),
+      write(' cur 1 no var '),nl,expand(LosNodos,Current1, LastTime, Time, Heuristic, NewCandidate,NL1,BDM1)
+    )
+  ),
+
+
+  NewCandidate=[Act,Objt],
+  ( (Act == mover)-> 
+    mover(Objt, BDM,BDM1) ; 
+    ( (Act == grab)-> agarrar(Objt, BDM, BDM1)  ; BDM = BD) 
+  ),
+
+  [[mover,estante1],[grab,sandwich],[mover,mesa1],[colocar,sandwich],[grab,agua],[mover,mesa2],[colocar,agua]]
+
+  LBC=[YYY,XXX],
+  ( (YYY == grab)-> 
+    write('inside grabbing'),nl,nl,nl,agarrar(XXX,NewBD1,BD) 
+    ; 
+    ( (YYY == mover)-> mover(XXX,NewBD1,BD); ( (YYY == colocar)-> write('inside coloquing '),nl,nl,nl,colocar(XXX,NewBD1,BD);  NewBD1 = BD ) )
+  ),
+  ( NewBD1 == false -> NewstBD = BD ; NewstBD = NewBD1 ),
+
+
+
+
+ cd('/home/ixchel/git/UNAM/IA/Busqueda/').
+ consult('a_star.pl').
+rb(W), start_plan([[hamburguesa,mesa1],[agua,mesa2]],W,CT,80,R,PLAN).
+
+[[mover,mesa3],[colocar,refresco],[grab,agua],[mover,mesa2],[colocar,agua],[mover,mesa1],[colocar,hamburguesa]]
