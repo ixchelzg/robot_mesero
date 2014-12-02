@@ -329,7 +329,7 @@ candidate(AllTheNodes,[H|T],CTime,Time,Heu,OldHeu,BestCandidate,BD,NewBD):-
                 candidate(AllTheNodes,T,NT,Time,Heu2,Heu1,BestCandidate1,BD,NewstBD),
                 append([NewBD1],NewstBD,NewBD),
                 append([Cost],NT,CTime),
-                append([Heu1],Heu2,Heu),
+                append([Rew],Heu2,Heu),
                 append([H],BestCandidate1,BestCandidate),!
               )
             )
@@ -354,7 +354,7 @@ find_best_first_([H|T],TheBest,Reward,OldReward,CTIMEs,StuffList,BD):-
         find_best_first_(T,Best_,Reward__,Reward1,CTIMEs1,StuffList,BD),
         append([H],Best_,TheBest),
         append([Time],CTIMEs1,CTIMEs),
-        append([Reward1],Reward__,Reward),!
+        append([Rew],Reward__,Reward),!
       )
       ;
       (

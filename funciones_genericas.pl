@@ -235,9 +235,7 @@ mover(L, BD, OldTime,Time,OldReward, Reward,W):-
 buscar(O,P, OldTime,Time, OldReward, Reward,W):-
 	quieroClase(O,W,Obj),
 	ubicacion_actual(Ub,W),
-	write(Ub),nl,
 	ubicar_objeto(O,Ub),
-	write(Ub),nl,
 	quieroProbAccionObjeto(Obj,buscar, Pro,Tm, Rw),
 	Time is OldTime+Tm,
 	accion_realizada(Pro,T),
@@ -252,7 +250,6 @@ agarrar(O, BD, OldTime, Time,OldReward, Reward,W):-
 	ubicar_objeto(O,Ub),
 	quieroClase(O,W,Obj),
 	brazos_robot(R,W),
-	write(' --------- ::::::: '),write(R),nl,nl,
 	quieroProbAccionObjeto(Obj,agarrar, P,Tm, Rw),Time is OldTime+Tm,
 	dif(R,false),
 	accion_realizada(P,T),
